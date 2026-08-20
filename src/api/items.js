@@ -12,8 +12,28 @@ export function fetchResume(client, userId, limit = 12) {
     });
 }
 
-export function fetchLatest(client, userId, parentId, limit = 16) {
-    return client.get(`/Users/${userId}/Items/Latest`, { parentId, limit });
+export function fetchLatest(client, userId, parentId, limit = 24) {
+    return client.get(`/Users/${userId}/Items/Latest`, {
+        parentId,
+        limit,
+        groupItems: true,
+        fields: 'Path'
+    });
+}
+
+export function fetchLatestMovies(client, userId, parentId, limit = 16) {
+    return client
+        .get('/Items', {
+            userId,
+            parentId,
+            recursive: true,
+            includeItemTypes: 'Movie',
+            sortBy: 'DateCreated',
+            sortOrder: 'Descending',
+            limit,
+            fields: 'Path'
+        })
+        .then((result) => result.Items);
 }
 
 export function fetchLibraryPage(client, userId, { parentId, startIndex, limit, ...query }) {
@@ -30,8 +50,10 @@ export function fetchLibraryPage(client, userId, { parentId, startIndex, limit, 
     });
 }
 
-export function fetchGenres(client, userId, parentId) {
-    return client.get('/Genres', { userId, parentId, sortBy: 'SortName' });
+export function fetchFilterOptions(client, userId, parentId) {
+    return client
+        .get('/Items/Filters', { userId, parentId, includeItemTypes: 'Movie,Series' })
+        .then((result) => ({ genres: result.Genres ?? [], years: result.Years ?? [] }));
 }
 
 export function searchItems(client, userId, term, limit = 40) {

@@ -8,9 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWindowDimensions } from 'react-native';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
-import { fetchResume, fetchUserViews, fetchLatest, fetchItem } from '../../src/api/items.js';
+import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItem } from '../../src/api/items.js';
 import { backdropUrl } from '../../src/api/imageUrl.js';
 import { billboardItems } from '../../src/features/home/billboard.js';
+import { dropStreamRows } from '../../src/features/home/latestRow.js';
 import { BillboardView } from '../../src/features/home/BillboardView.js';
 import { MediaRow } from '../../src/features/home/MediaRow.js';
 import { HomeSkeleton } from '../../src/features/home/HomeSkeleton.js';
@@ -59,7 +60,12 @@ export default function HomeScreen() {
             const latest = await Promise.all(
                 viewsResult.Items.map(async (view) => ({
                     view,
-                    items: await fetchLatest(client, userId, view.Id).catch(() => [])
+                    items: await (view.CollectionType === 'movies'
+                        ? fetchLatestMovies(client, userId, view.Id)
+                        : fetchLatest(client, userId, view.Id)
+                    )
+                        .then(dropStreamRows)
+                        .catch(() => [])
                 }))
             );
             setRows(latest.filter((row) => row.items.length > 0));

@@ -1,10 +1,18 @@
 const QUALITY = 90;
 
-/** Tagged image urls get year-long cache headers from the server. */
+/**
+ * Tagged image urls get year-long cache headers from the server. Episodes
+ * without their own art fall back to the series poster, like the web cards.
+ */
 export function primaryUrl(baseUrl, item, maxWidth) {
     const tag = item.ImageTags?.Primary;
-    if (!tag) return null;
-    return `${baseUrl}/Items/${item.Id}/Images/Primary?tag=${tag}&maxWidth=${maxWidth}&quality=${QUALITY}`;
+    if (tag) {
+        return `${baseUrl}/Items/${item.Id}/Images/Primary?tag=${tag}&maxWidth=${maxWidth}&quality=${QUALITY}`;
+    }
+    if (item.SeriesId && item.SeriesPrimaryImageTag) {
+        return `${baseUrl}/Items/${item.SeriesId}/Images/Primary?tag=${item.SeriesPrimaryImageTag}&maxWidth=${maxWidth}&quality=${QUALITY}`;
+    }
+    return null;
 }
 
 export function backdropUrl(baseUrl, item, maxWidth) {

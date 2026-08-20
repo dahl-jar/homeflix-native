@@ -5,14 +5,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '../../../src/session/SessionProvider.js';
-import { fetchLibraryPage, fetchGenres, fetchItem } from '../../../src/api/items.js';
+import { fetchLibraryPage, fetchFilterOptions, fetchItem } from '../../../src/api/items.js';
 import { createPager } from '../../../src/features/library/paging.js';
 import {
     SORT_OPTIONS,
-    DECADE_OPTIONS,
     RATING_OPTIONS,
     STATUS_OPTIONS,
-    buildLibraryQuery
+    buildLibraryQuery,
+    decadesFromYears
 } from '../../../src/features/library/filters.js';
 import { DropdownPill } from '../../../src/components/DropdownPill.js';
 import { PosterCard } from '../../../src/components/PosterCard.js';
@@ -33,17 +33,18 @@ export default function LibraryScreen() {
     const loadingRef = useRef(false);
     const [items, setItems] = useState([]);
     const [genres, setGenres] = useState([]);
+    const [decadeOptions, setDecadeOptions] = useState([]);
     const [viewName, setViewName] = useState('');
     const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].key);
-    const [genreId, setGenreId] = useState(null);
+    const [genre, setGenre] = useState(null);
     const [decadeKey, setDecadeKey] = useState(null);
     const [ratingKey, setRatingKey] = useState(null);
     const [statusKey, setStatusKey] = useState(null);
 
     const selection = {
         sort: SORT_OPTIONS.find((option) => option.key === sortKey),
-        genreId,
-        decade: DECADE_OPTIONS.find((option) => option.key === decadeKey) ?? null,
+        genre,
+        decade: decadeOptions.find((option) => option.key === decadeKey) ?? null,
         rating: RATING_OPTIONS.find((option) => option.key === ratingKey) ?? null,
         status: STATUS_OPTIONS.find((option) => option.key === statusKey) ?? null
     };
@@ -69,17 +70,23 @@ export default function LibraryScreen() {
         pagerRef.current = createPager({ pageSize: 100 });
         setItems([]);
         loadPage();
-    }, [session.client, session.userId, viewId, sortKey, genreId, decadeKey, ratingKey, statusKey]);
+    }, [session.client, session.userId, viewId, sortKey, genre, decadeKey, ratingKey, statusKey]);
 
     useEffect(() => {
         if (!session.client || !session.userId || !viewId) return;
-        fetchGenres(session.client, session.userId, viewId)
-            .then((result) => setGenres(result.Items))
-            .catch(() => setGenres([]));
+        fetchFilterOptions(session.client, session.userId, viewId)
+            .then(({ genres: names, years }) => {
+                setGenres(names);
+                setDecadeOptions(decadesFromYears(years));
+            })
+            .catch(() => {
+                setGenres([]);
+                setDecadeOptions([]);
+            });
         fetchItem(session.client, session.userId, viewId)
             .then((view) => setViewName(view.Name))
             .catch(() => setViewName(''));
-        setGenreId(null);
+        setGenre(null);
         setDecadeKey(null);
         setRatingKey(null);
         setStatusKey(null);
@@ -100,11 +107,11 @@ export default function LibraryScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.pillRow}
                 >
-                    {genreId || decadeKey || ratingKey || statusKey ? (
+                    {genre || decadeKey || ratingKey || statusKey ? (
                         <Pressable
                             style={styles.clearPill}
                             onPress={() => {
-                                setGenreId(null);
+                                setGenre(null);
                                 setDecadeKey(null);
                                 setRatingKey(null);
                                 setStatusKey(null);
@@ -122,14 +129,14 @@ export default function LibraryScreen() {
                     <DropdownPill
                         title="Genre"
                         clearLabel="All genres"
-                        options={genres.map((genre) => ({ key: genre.Id, label: genre.Name }))}
-                        selected={genreId}
-                        onSelect={setGenreId}
+                        options={genres.map((name) => ({ key: name, label: name }))}
+                        selected={genre}
+                        onSelect={setGenre}
                     />
                     <DropdownPill
                         title="Decade"
                         clearLabel="Any decade"
-                        options={DECADE_OPTIONS}
+                        options={decadeOptions}
                         selected={decadeKey}
                         onSelect={setDecadeKey}
                     />

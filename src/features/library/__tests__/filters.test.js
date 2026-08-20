@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SORT_OPTIONS, DECADE_OPTIONS, RATING_OPTIONS, STATUS_OPTIONS, buildLibraryQuery } from '../filters.js';
+import { SORT_OPTIONS, RATING_OPTIONS, STATUS_OPTIONS, buildLibraryQuery, decadesFromYears } from '../filters.js';
 
 const sortByKey = Object.fromEntries(SORT_OPTIONS.map((option) => [option.key, option]));
 const defaultSelection = { sort: sortByKey.az };
@@ -21,16 +21,22 @@ test('should map each sort option onto sortBy and sortOrder', () => {
     );
 });
 
-test('should include the genre id only when a genre is selected', () => {
-    assert.equal('genreIds' in buildLibraryQuery(defaultSelection), false);
+test('should include the genre name only when a genre is selected', () => {
+    assert.equal('genres' in buildLibraryQuery(defaultSelection), false);
     assert.equal(
-        buildLibraryQuery({ ...defaultSelection, genreId: 'genre-one' }).genreIds,
-        'genre-one'
+        buildLibraryQuery({ ...defaultSelection, genre: 'K-Drama' }).genres,
+        'K-Drama'
     );
 });
 
+test('should derive decade options from the library years, newest first', () => {
+    const options = decadesFromYears([1994, 1999, 2003, 2021, 1957]);
+
+    assert.deepEqual(options.map((option) => option.label), ['2020s', '2000s', '1990s', '1950s']);
+});
+
 test('should expand a decade into its ten years', () => {
-    const nineties = DECADE_OPTIONS.find((option) => option.label === '1990s');
+    const nineties = decadesFromYears([1994]).find((option) => option.label === '1990s');
 
     assert.equal(
         buildLibraryQuery({ ...defaultSelection, decade: nineties }).years,
