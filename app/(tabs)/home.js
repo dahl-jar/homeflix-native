@@ -29,11 +29,13 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
     const [heroItem, setHeroItem] = useState(null);
 
+    const RETRY_DELAY_MS = 3000;
+
     useEffect(() => {
         if (!session.client || !session.userId) return;
         const { client, userId } = session;
 
-        fetchRecommendations(client)
+        const loadBillboard = () => fetchRecommendations(client)
             .then(async (recs) => {
                 const topRanked = [...recs].sort((a, b) => a.Rank - b.Rank).slice(0, 8);
                 const resolved = await Promise.all(
@@ -43,8 +45,13 @@ export default function HomeScreen() {
                     resolved.filter(Boolean).map((item) => [item.Id, item])
                 );
                 setBillboard(billboardItems(topRanked, byId));
-            })
-            .catch(() => setBillboard([]));
+            });
+
+        loadBillboard().catch(() => {
+            setTimeout(() => {
+                loadBillboard().catch(() => setBillboard([]));
+            }, RETRY_DELAY_MS);
+        });
 
         fetchResume(client, userId).then((result) => setContinueWatching(result.Items));
 
@@ -66,14 +73,26 @@ export default function HomeScreen() {
             contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
         >
             {heroItem ? (
-                <Image
-                    source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
-                    style={[styles.heroAmbient, { top: 0, height: width * 1.25 + 200 }]}
-                    contentFit="cover"
-                    blurRadius={90}
-                    transition={600}
-                    pointerEvents="none"
-                />
+                <View pointerEvents="none" style={[styles.backdropStack, { height: width * 1.25 + 420 }]}>
+                    <Image
+                        source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
+                        style={{ flex: 1 }}
+                        contentFit="cover"
+                        blurRadius={90}
+                        transition={600}
+                    />
+                    <LinearGradient
+                        colors={[
+                            'rgba(21, 19, 19, 0)',
+                            'rgba(21, 19, 19, 0)',
+                            'rgba(21, 19, 19, 0.65)',
+                            colors.bg,
+                            colors.bg
+                        ]}
+                        locations={[0, 0.38, 0.55, 0.7, 1]}
+                        style={styles.backdropStackShade}
+                    />
+                </View>
             ) : null}
             <View style={[styles.header, { top: insets.top + 4 }]}>
                 <Text style={styles.wordmark}>HOMEFLIX</Text>
@@ -93,12 +112,6 @@ export default function HomeScreen() {
             <BillboardView items={billboard} baseUrl={session.serverUrl} onActiveItem={setHeroItem} />
             {loading && billboard.length === 0 ? <HomeSkeleton /> : null}
             <View style={billboard.length > 0 ? styles.rowsOverlap : null}>
-                <LinearGradient
-                    colors={['rgba(21, 19, 19, 0)', 'rgba(21, 19, 19, 0.5)', colors.bg, colors.bg]}
-                    locations={[0, 0.32, 0.58, 1]}
-                    style={styles.rowsGlow}
-                    pointerEvents="none"
-                />
                 <MediaRow
                     title="Continue Watching"
                     items={continueWatching}
@@ -143,18 +156,19 @@ const styles = StyleSheet.create({
     rowsOverlap: {
         marginTop: -72
     },
-    rowsGlow: {
+    backdropStack: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 520
+        opacity: 0.6
     },
-    heroAmbient: {
+    backdropStackShade: {
         position: 'absolute',
+        top: 0,
         left: 0,
         right: 0,
-        opacity: 0.85
+        bottom: 0
     },
     wordmark: {
         color: colors.accent,
