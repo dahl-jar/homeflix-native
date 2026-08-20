@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
 import { fetchResume, fetchUserViews, fetchLatest, fetchItem } from '../../src/api/items.js';
+import { backdropUrl } from '../../src/api/imageUrl.js';
 import { billboardItems } from '../../src/features/home/billboard.js';
 import { BillboardView } from '../../src/features/home/BillboardView.js';
 import { MediaRow } from '../../src/features/home/MediaRow.js';
@@ -23,6 +25,7 @@ export default function HomeScreen() {
     const [continueWatching, setContinueWatching] = useState([]);
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [heroItem, setHeroItem] = useState(null);
 
     useEffect(() => {
         if (!session.client || !session.userId) return;
@@ -75,22 +78,40 @@ export default function HomeScreen() {
                     )}
                 </Pressable>
             </View>
-            <BillboardView items={billboard} baseUrl={session.serverUrl} />
+            <BillboardView items={billboard} baseUrl={session.serverUrl} onActiveItem={setHeroItem} />
             {loading && billboard.length === 0 ? <HomeSkeleton /> : null}
-            <MediaRow
-                title="Continue Watching"
-                items={continueWatching}
-                baseUrl={session.serverUrl}
-                variant="progress"
-            />
-            {rows.map((row) => (
-                <MediaRow
-                    key={row.view.Id}
-                    title={`Recently Added in ${row.view.Name}`}
-                    items={row.items}
-                    baseUrl={session.serverUrl}
+            <View>
+                {heroItem ? (
+                    <Image
+                        source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
+                        style={styles.rowsEcho}
+                        contentFit="cover"
+                        blurRadius={90}
+                        transition={600}
+                        pointerEvents="none"
+                    />
+                ) : null}
+                <LinearGradient
+                    colors={['rgba(21, 19, 19, 0.55)', 'rgba(21, 19, 19, 0.82)', colors.bg]}
+                    locations={[0, 0.5, 1]}
+                    style={styles.rowsGlow}
+                    pointerEvents="none"
                 />
-            ))}
+                <MediaRow
+                    title="Continue Watching"
+                    items={continueWatching}
+                    baseUrl={session.serverUrl}
+                    variant="progress"
+                />
+                {rows.map((row) => (
+                    <MediaRow
+                        key={row.view.Id}
+                        title={`Recently Added in ${row.view.Name}`}
+                        items={row.items}
+                        baseUrl={session.serverUrl}
+                    />
+                ))}
+            </View>
         </ScrollView>
     );
 }
@@ -116,6 +137,21 @@ const styles = StyleSheet.create({
     },
     headerAvatarFallback: {
         backgroundColor: '#5f312e'
+    },
+    rowsGlow: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 460
+    },
+    rowsEcho: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 460,
+        opacity: 0.55
     },
     wordmark: {
         color: colors.accent,

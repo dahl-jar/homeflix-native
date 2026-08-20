@@ -12,10 +12,16 @@ const ROTATE_MS = 12000;
 const HEIGHT_FACTOR = 1.15;
 const GENRE_LIMIT = 3;
 
-export function BillboardView({ items, baseUrl }) {
+export function BillboardView({ items, baseUrl, onActiveItem }) {
     const router = useRouter();
     const { width } = useWindowDimensions();
     const [index, setIndex] = useState(0);
+
+    const item = items.length > 0 ? items[index % items.length] : null;
+
+    useEffect(() => {
+        if (item && onActiveItem) onActiveItem(item);
+    }, [item?.Id]);
 
     useEffect(() => {
         if (items.length < 2) return undefined;
@@ -25,8 +31,7 @@ export function BillboardView({ items, baseUrl }) {
         return () => clearInterval(timer);
     }, [items.length]);
 
-    if (items.length === 0) return null;
-    const item = items[index % items.length];
+    if (!item) return null;
 
     return (
         <View>
