@@ -15,7 +15,7 @@ export function GhostTile({ glyph, label, onPress }) {
 const styles = StyleSheet.create({
     tile: {
         alignItems: 'center',
-        minWidth: 64,
+        width: 76,
         paddingVertical: 8
     },
     glyph: {
@@ -25,6 +25,7 @@ const styles = StyleSheet.create({
     label: {
         color: colors.textDim,
         fontSize: 11,
-        marginTop: 4
+        marginTop: 4,
+        textAlign: 'center'
     }
 });

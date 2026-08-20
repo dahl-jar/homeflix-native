@@ -44,6 +44,14 @@ export function searchItems(client, userId, term, limit = 40) {
     });
 }
 
+export function fetchSimilar(client, userId, itemId, limit = 12) {
+    return client.get(`/Items/${itemId}/Similar`, { userId, limit });
+}
+
+export function fetchSources(client, userId, itemId) {
+    return client.post(`/Items/${itemId}/PlaybackInfo?userId=${userId}&IsPlayback=false`, {});
+}
+
 export function fetchItem(client, userId, itemId) {
     return client.get(`/Users/${userId}/Items/${itemId}`);
 }

@@ -4,9 +4,12 @@ import { playerLauncher } from '../playback/playerLauncher.js';
 import { radius } from '../theme/tokens.js';
 
 /** The one Play control: full-width white pill, wired only to the stub launcher. */
-export function PlayPill({ item, origin, label = 'Play' }) {
+export function PlayPill({ item, origin, label = 'Play', mediaSourceId = null }) {
     return (
-        <Pressable style={styles.pill} onPress={() => playerLauncher.play(item, origin)}>
+        <Pressable
+            style={styles.pill}
+            onPress={() => playerLauncher.play(item, origin, { mediaSourceId })}
+        >
             <Text style={styles.text}>▶ {label}</Text>
         </Pressable>
     );

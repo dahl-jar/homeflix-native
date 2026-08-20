@@ -4,13 +4,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useSession } from '../../src/session/SessionProvider.js';
-import { fetchItem, fetchSeasons, fetchEpisodes } from '../../src/api/items.js';
+import { fetchItem, fetchSeasons, fetchEpisodes, fetchSimilar, fetchSources } from '../../src/api/items.js';
 import { backdropUrl, primaryUrl } from '../../src/api/imageUrl.js';
 import { chips, starText, runtimeText } from '../../src/features/detail/format.js';
 import { BackdropImage } from '../../src/components/BackdropImage.js';
 import { GlassChip } from '../../src/components/GlassChip.js';
 import { PlayPill } from '../../src/components/PlayPill.js';
 import { GhostTile } from '../../src/components/GhostTile.js';
+import { PickerOverlay } from '../../src/components/PickerOverlay.js';
+import { PosterCard } from '../../src/components/PosterCard.js';
+import { sourceOptions, AUTO_SOURCE_KEY } from '../../src/features/detail/sources.js';
 import { playerLauncher } from '../../src/playback/playerLauncher.js';
 import { colors, radius, spacing } from '../../src/theme/tokens.js';
 
@@ -26,10 +29,21 @@ export default function DetailScreen() {
     const [seasons, setSeasons] = useState([]);
     const [seasonIndex, setSeasonIndex] = useState(0);
     const [episodes, setEpisodes] = useState([]);
+    const [similar, setSimilar] = useState([]);
+    const [sources, setSources] = useState([]);
+    const [sourceKey, setSourceKey] = useState(AUTO_SOURCE_KEY);
+    const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
 
     useEffect(() => {
         if (!session.client || !session.userId || !id) return;
+        setSourceKey(AUTO_SOURCE_KEY);
         fetchItem(session.client, session.userId, id).then(setItem);
+        fetchSimilar(session.client, session.userId, id)
+            .then((result) => setSimilar(result.Items))
+            .catch(() => setSimilar([]));
+        fetchSources(session.client, session.userId, id)
+            .then((result) => setSources(result.MediaSources ?? []))
+            .catch(() => setSources([]));
     }, [session.client, session.userId, id]);
 
     useEffect(() => {
@@ -85,13 +99,31 @@ export default function DetailScreen() {
                     item={item}
                     origin="detail"
                     label={item.UserData?.PlaybackPositionTicks > 0 ? 'Resume' : 'Play'}
+                    mediaSourceId={sourceKey === AUTO_SOURCE_KEY ? null : sourceKey}
                 />
 
                 <View style={styles.tiles}>
                     <GhostTile glyph="▤" label="Trailer" onPress={() => playerLauncher.play(item, 'trailer')} />
                     <GhostTile glyph="✓" label={item.UserData?.Played ? 'Played' : 'Mark Played'} onPress={() => {}} />
                     <GhostTile glyph="↺" label="Restart" onPress={() => playerLauncher.play(item, 'restart')} />
+                    <GhostTile
+                        glyph="≣"
+                        label={sourceKey === AUTO_SOURCE_KEY ? 'Source' : 'Source ✓'}
+                        onPress={() => setSourcePickerOpen(true)}
+                    />
                 </View>
+
+                <PickerOverlay
+                    visible={sourcePickerOpen}
+                    title="Source"
+                    entries={sourceOptions(sources, item.Name)}
+                    isSelected={(entry) => entry.key === sourceKey}
+                    onChoose={(key) => {
+                        setSourcePickerOpen(false);
+                        setSourceKey(key ?? AUTO_SOURCE_KEY);
+                    }}
+                    onClose={() => setSourcePickerOpen(false)}
+                />
 
                 {item.Overview ? <Text style={styles.overview}>{item.Overview}</Text> : null}
 
@@ -152,6 +184,25 @@ export default function DetailScreen() {
                                 </View>
                             </Pressable>
                         ))}
+                    </View>
+                ) : null}
+
+                {similar.length > 0 ? (
+                    <View style={styles.castBlock}>
+                        <Text style={styles.sectionTitle}>More Like This</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            <View style={styles.castRow}>
+                                {similar.map((rec) => (
+                                    <PosterCard
+                                        key={rec.Id}
+                                        item={rec}
+                                        imageUri={primaryUrl(session.serverUrl, rec, 220)}
+                                        width={110}
+                                        onPress={() => router.push(`/details/${rec.Id}`)}
+                                    />
+                                ))}
+                            </View>
+                        </ScrollView>
                     </View>
                 ) : null}
 
@@ -228,10 +279,11 @@ const styles = StyleSheet.create({
     },
     tiles: {
         flexDirection: 'row',
-        justifyContent: 'flex-start',
-        gap: 18,
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
         marginTop: 10,
-        marginBottom: 6
+        marginBottom: 6,
+        paddingHorizontal: 4
     },
     overview: {
         color: '#d6d2d1',
