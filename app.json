@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Homeflix",
+    "slug": "homeflix",
+    "scheme": "homeflix",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#151313",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "dev.dahl-jar.homeflix-native",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSLocalNetworkUsageDescription": "Homeflix connects to the Jellyfin server on your home network."
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}
