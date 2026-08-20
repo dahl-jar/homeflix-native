@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Text, View, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
+import { BlurView } from 'expo-blur';
 
 import { BackdropImage } from '../../components/BackdropImage.js';
 import { PlayPill } from '../../components/PlayPill.js';
@@ -35,13 +37,29 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
 
     return (
         <View>
-            <BackdropImage
-                uri={backdropUrl(baseUrl, item, 1280)}
-                style={{ width, height: width * HEIGHT_FACTOR }}
-            />
+            <MaskedView
+                maskElement={
+                    <LinearGradient
+                        colors={['#000000', '#000000', 'transparent']}
+                        locations={[0, 0.6, 1]}
+                        style={{ flex: 1 }}
+                    />
+                }
+            >
+                <BackdropImage
+                    uri={backdropUrl(baseUrl, item, 1280)}
+                    style={{ width, height: width * HEIGHT_FACTOR }}
+                />
+            </MaskedView>
+            <View style={styles.seam} pointerEvents="none">
+                <BlurView intensity={8} tint="dark" style={styles.seamBand} />
+                <BlurView intensity={20} tint="dark" style={styles.seamBand} />
+                <BlurView intensity={38} tint="dark" style={styles.seamBand} />
+                <BlurView intensity={60} tint="dark" style={styles.seamBand} />
+            </View>
             <LinearGradient
-                colors={['transparent', 'rgba(21, 19, 19, 0.72)', colors.bg, colors.bg]}
-                locations={[0, 0.55, 0.88, 1]}
+                colors={['transparent', 'rgba(21, 19, 19, 0.55)', 'rgba(21, 19, 19, 0.2)']}
+                locations={[0, 0.6, 1]}
                 style={styles.shade}
             />
             <View style={styles.content}>
@@ -70,6 +88,16 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
 }
 
 const styles = StyleSheet.create({
+    seam: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 168
+    },
+    seamBand: {
+        flex: 1
+    },
     shade: {
         position: 'absolute',
         left: 0,

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useWindowDimensions } from 'react-native';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
 import { fetchResume, fetchUserViews, fetchLatest, fetchItem } from '../../src/api/items.js';
@@ -21,6 +22,7 @@ export default function HomeScreen() {
     const session = useSession();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
     const [billboard, setBillboard] = useState([]);
     const [continueWatching, setContinueWatching] = useState([]);
     const [rows, setRows] = useState([]);
@@ -63,6 +65,16 @@ export default function HomeScreen() {
             style={styles.screen}
             contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
         >
+            {heroItem ? (
+                <Image
+                    source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
+                    style={[styles.heroAmbient, { top: width * 0.72, height: width * 0.53 + 460 }]}
+                    contentFit="cover"
+                    blurRadius={90}
+                    transition={600}
+                    pointerEvents="none"
+                />
+            ) : null}
             <View style={[styles.header, { top: insets.top + 4 }]}>
                 <Text style={styles.wordmark}>HOMEFLIX</Text>
                 <Pressable onPress={() => router.replace('/(tabs)/profile')}>
@@ -81,19 +93,9 @@ export default function HomeScreen() {
             <BillboardView items={billboard} baseUrl={session.serverUrl} onActiveItem={setHeroItem} />
             {loading && billboard.length === 0 ? <HomeSkeleton /> : null}
             <View style={billboard.length > 0 ? styles.rowsOverlap : null}>
-                {heroItem ? (
-                    <Image
-                        source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
-                        style={styles.rowsEcho}
-                        contentFit="cover"
-                        blurRadius={90}
-                        transition={600}
-                        pointerEvents="none"
-                    />
-                ) : null}
                 <LinearGradient
-                    colors={['rgba(21, 19, 19, 0.55)', 'rgba(21, 19, 19, 0.82)', colors.bg]}
-                    locations={[0, 0.5, 1]}
+                    colors={['rgba(21, 19, 19, 0)', 'rgba(21, 19, 19, 0.55)', colors.bg]}
+                    locations={[0, 0.55, 1]}
                     style={styles.rowsGlow}
                     pointerEvents="none"
                 />
@@ -146,15 +148,13 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: 460
+        height: 520
     },
-    rowsEcho: {
+    heroAmbient: {
         position: 'absolute',
-        top: 0,
         left: 0,
         right: 0,
-        height: 460,
-        opacity: 0.55
+        opacity: 0.6
     },
     wordmark: {
         color: colors.accent,
