@@ -68,7 +68,7 @@ export default function HomeScreen() {
             {heroItem ? (
                 <Image
                     source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
-                    style={[styles.heroAmbient, { top: 0, height: width * 1.25 + 460 }]}
+                    style={[styles.heroAmbient, { top: 0, height: width * 1.25 + 200 }]}
                     contentFit="cover"
                     blurRadius={90}
                     transition={600}
@@ -94,8 +94,8 @@ export default function HomeScreen() {
             {loading && billboard.length === 0 ? <HomeSkeleton /> : null}
             <View style={billboard.length > 0 ? styles.rowsOverlap : null}>
                 <LinearGradient
-                    colors={['rgba(21, 19, 19, 0)', 'rgba(21, 19, 19, 0.55)', colors.bg]}
-                    locations={[0, 0.55, 1]}
+                    colors={['rgba(21, 19, 19, 0)', 'rgba(21, 19, 19, 0.5)', colors.bg, colors.bg]}
+                    locations={[0, 0.32, 0.58, 1]}
                     style={styles.rowsGlow}
                     pointerEvents="none"
                 />
