@@ -9,7 +9,7 @@ import { backdropUrl } from '../../api/imageUrl.js';
 import { colors, radius, spacing } from '../../theme/tokens.js';
 
 const ROTATE_MS = 12000;
-const HEIGHT_FACTOR = 1.15;
+const HEIGHT_FACTOR = 1.25;
 const GENRE_LIMIT = 3;
 
 export function BillboardView({ items, baseUrl, onActiveItem }) {
@@ -40,8 +40,8 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
                 style={{ width, height: width * HEIGHT_FACTOR }}
             />
             <LinearGradient
-                colors={['transparent', 'rgba(21, 19, 19, 0.7)', colors.bg]}
-                locations={[0, 0.62, 1]}
+                colors={['transparent', 'rgba(21, 19, 19, 0.72)', colors.bg, colors.bg]}
+                locations={[0, 0.55, 0.88, 1]}
                 style={styles.shade}
             />
             <View style={styles.content}>
@@ -75,13 +75,13 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: '75%'
+        height: '82%'
     },
     content: {
         position: 'absolute',
         left: spacing.screen,
         right: spacing.screen,
-        bottom: spacing.screen
+        bottom: 86
     },
     title: {
         color: colors.text,

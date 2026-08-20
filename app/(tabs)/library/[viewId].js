@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, ScrollView, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
+import { FlatList, ScrollView, Pressable, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -99,6 +100,19 @@ export default function LibraryScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.pillRow}
                 >
+                    {genreId || decadeKey || ratingKey || statusKey ? (
+                        <Pressable
+                            style={styles.clearPill}
+                            onPress={() => {
+                                setGenreId(null);
+                                setDecadeKey(null);
+                                setRatingKey(null);
+                                setStatusKey(null);
+                            }}
+                        >
+                            <Ionicons name="close" size={16} color={colors.text} />
+                        </Pressable>
+                    ) : null}
                     <DropdownPill
                         title="Sort"
                         options={SORT_OPTIONS}
@@ -186,8 +200,19 @@ const styles = StyleSheet.create({
     pillRow: {
         flexDirection: 'row',
         gap: 8,
-        paddingHorizontal: spacing.screen,
+        paddingLeft: spacing.screen,
+        paddingRight: spacing.screen + 8,
         paddingBottom: 12
+    },
+    clearPill: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        borderWidth: 1,
+        borderColor: colors.pillBorder,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center'
     },
     row: {
         gap: spacing.card,

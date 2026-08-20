@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Modal, Pressable, Text, View, ScrollView, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,9 +12,12 @@ import { colors, radius } from '../theme/tokens.js';
  * { key, label }; `selected` is a key or null; `clearLabel` prepends an
  * unselect entry when provided.
  */
+const OPTION_HEIGHT = 45;
+
 export function DropdownPill({ title, options, selected, onSelect, clearLabel }) {
     const [open, setOpen] = useState(false);
     const insets = useSafeAreaInsets();
+    const scrollRef = useRef(null);
     const selectedOption = options.find((option) => option.key === selected);
     const active = selectedOption != null;
 
@@ -50,9 +53,18 @@ export function DropdownPill({ title, options, selected, onSelect, clearLabel })
                         {title.toUpperCase()}
                     </Text>
                     <ScrollView
+                        ref={scrollRef}
                         style={styles.list}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
+                        onLayout={(event) => {
+                            const viewport = event.nativeEvent.layout.height;
+                            const selectedIndex = entries.findIndex((entry) =>
+                                entry.key === null ? !active : entry.key === selected
+                            );
+                            const target = selectedIndex * OPTION_HEIGHT - viewport / 2 + OPTION_HEIGHT / 2;
+                            if (target > 0) scrollRef.current?.scrollTo({ y: target, animated: false });
+                        }}
                     >
                         {entries.map((entry) => {
                             const isSelected =
@@ -130,7 +142,8 @@ const styles = StyleSheet.create({
         paddingVertical: 32
     },
     option: {
-        paddingVertical: 11,
+        height: OPTION_HEIGHT,
+        justifyContent: 'center',
         alignItems: 'center'
     },
     optionText: {

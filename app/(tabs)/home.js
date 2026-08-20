@@ -80,7 +80,7 @@ export default function HomeScreen() {
             </View>
             <BillboardView items={billboard} baseUrl={session.serverUrl} onActiveItem={setHeroItem} />
             {loading && billboard.length === 0 ? <HomeSkeleton /> : null}
-            <View>
+            <View style={billboard.length > 0 ? styles.rowsOverlap : null}>
                 {heroItem ? (
                     <Image
                         source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
@@ -137,6 +137,9 @@ const styles = StyleSheet.create({
     },
     headerAvatarFallback: {
         backgroundColor: '#5f312e'
+    },
+    rowsOverlap: {
+        marginTop: -72
     },
     rowsGlow: {
         position: 'absolute',
