@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWindowDimensions } from 'react-native';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
-import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItem } from '../../src/api/items.js';
+import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItemsByIds } from '../../src/api/items.js';
 import { backdropUrl } from '../../src/api/imageUrl.js';
 import { billboardItems } from '../../src/features/home/billboard.js';
 import { dropStreamRows } from '../../src/features/home/latestRow.js';
@@ -39,9 +39,7 @@ export default function HomeScreen() {
         const loadBillboard = () => fetchRecommendations(client)
             .then(async (recs) => {
                 const topRanked = [...recs].sort((a, b) => a.Rank - b.Rank).slice(0, 8);
-                const resolved = await Promise.all(
-                    topRanked.map((rec) => fetchItem(client, userId, rec.ItemId).catch(() => null))
-                );
+                const resolved = await fetchItemsByIds(client, userId, topRanked.map((rec) => rec.ItemId));
                 const byId = Object.fromEntries(
                     resolved.filter(Boolean).map((item) => [item.Id, item])
                 );
@@ -77,6 +75,7 @@ export default function HomeScreen() {
         <ScrollView
             style={styles.screen}
             contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
+            showsVerticalScrollIndicator={false}
         >
             {heroItem ? (
                 <View pointerEvents="none" style={[styles.backdropStack, { height: width * 1.25 + 420 }]}>

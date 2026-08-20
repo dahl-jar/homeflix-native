@@ -157,6 +157,7 @@ export default function LibraryScreen() {
                 </ScrollView>
             </View>
             <FlatList
+                showsVerticalScrollIndicator={false}
                 data={items}
                 numColumns={COLUMNS}
                 keyExtractor={(item) => item.Id}

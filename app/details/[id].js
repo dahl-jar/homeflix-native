@@ -69,7 +69,11 @@ export default function DetailScreen() {
     const star = starText(item);
 
     return (
-        <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}>
+        <ScrollView
+            style={styles.screen}
+            contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
+            showsVerticalScrollIndicator={false}
+        >
             <View>
                 <BackdropImage
                     uri={backdropUrl(session.serverUrl, item, 1280)}

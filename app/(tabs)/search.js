@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '../../src/session/SessionProvider.js';
-import { searchItems, fetchItem } from '../../src/api/items.js';
+import { searchItems, fetchItemsByIds } from '../../src/api/items.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
 import { createSearchController } from '../../src/features/search/debounce.js';
 import { PosterCard } from '../../src/components/PosterCard.js';
@@ -32,10 +32,13 @@ export default function SearchScreen() {
         fetchRecommendations(client)
             .then(async (recs) => {
                 const topRanked = [...recs].sort((a, b) => a.Rank - b.Rank).slice(0, 12);
-                const resolved = await Promise.all(
-                    topRanked.map((rec) => fetchItem(client, userId, rec.ItemId).catch(() => null))
+                const resolved = await fetchItemsByIds(
+                    client,
+                    userId,
+                    topRanked.map((rec) => rec.ItemId)
                 );
-                setPopular(resolved.filter(Boolean));
+                const byId = Object.fromEntries(resolved.map((item) => [item.Id, item]));
+                setPopular(topRanked.map((rec) => byId[rec.ItemId]).filter(Boolean));
             })
             .catch(() => setPopular([]));
     }, [session.client, session.userId]);
@@ -71,6 +74,7 @@ export default function SearchScreen() {
                 <Text style={styles.popularLabel}>Popular on Homeflix</Text>
             ) : null}
             <FlatList
+                showsVerticalScrollIndicator={false}
                 data={query.trim() === '' ? popular : results}
                 numColumns={COLUMNS}
                 keyExtractor={(item) => item.Id}

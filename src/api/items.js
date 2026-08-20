@@ -78,6 +78,19 @@ export function fetchItem(client, userId, itemId) {
     return client.get(`/Users/${userId}/Items/${itemId}`);
 }
 
+export function fetchItemsByIds(client, userId, itemIds) {
+    if (itemIds.length === 0) return Promise.resolve([]);
+
+    return client.get('/Items', {
+        userId,
+        ids: itemIds.join(','),
+        enableImages: true,
+        enableUserData: true,
+        enableTotalRecordCount: false,
+        fields: 'Overview'
+    }).then((result) => result.Items);
+}
+
 export function fetchSeasons(client, userId, seriesId) {
     return client.get(`/Shows/${seriesId}/Seasons`, { userId });
 }
