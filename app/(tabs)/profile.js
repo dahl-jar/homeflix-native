@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 
 import { useSession } from '../../src/session/SessionProvider.js';
+import { ScreenBackground } from '../../src/components/ScreenBackground.js';
 import { colors, radius, spacing } from '../../src/theme/tokens.js';
 
 const BOTTOM_CLEARANCE = 120;
@@ -54,10 +55,12 @@ export default function SettingsScreen() {
     };
 
     return (
-        <ScrollView
-            style={styles.screen}
-            contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: BOTTOM_CLEARANCE }}
-        >
+        <View style={styles.root}>
+            <ScreenBackground />
+            <ScrollView
+                style={styles.screen}
+                contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: BOTTOM_CLEARANCE }}
+            >
             <Text style={styles.title}>Settings</Text>
 
             <View style={styles.profileCard}>
@@ -102,14 +105,18 @@ export default function SettingsScreen() {
                     last
                 />
             </Section>
-        </ScrollView>
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        backgroundColor: colors.bg
+    },
     screen: {
         flex: 1,
-        backgroundColor: colors.bg,
         paddingHorizontal: spacing.screen
     },
     title: {

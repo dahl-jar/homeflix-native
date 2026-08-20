@@ -23,7 +23,9 @@ export function PosterCard({ item, imageUri, width, onPress, showTitle = false }
 
 const styles = StyleSheet.create({
     poster: {
-        borderRadius: radius.card
+        borderRadius: radius.card,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(255, 255, 255, 0.10)'
     },
     title: {
         color: colors.textDim,

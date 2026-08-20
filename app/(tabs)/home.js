@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '../../src/session/SessionProvider.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
@@ -7,15 +10,19 @@ import { fetchResume, fetchUserViews, fetchLatest, fetchItem } from '../../src/a
 import { billboardItems } from '../../src/features/home/billboard.js';
 import { BillboardView } from '../../src/features/home/BillboardView.js';
 import { MediaRow } from '../../src/features/home/MediaRow.js';
+import { HomeSkeleton } from '../../src/features/home/HomeSkeleton.js';
 import { colors, spacing } from '../../src/theme/tokens.js';
 
 const BOTTOM_CLEARANCE = 110;
 
 export default function HomeScreen() {
     const session = useSession();
+    const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [billboard, setBillboard] = useState([]);
     const [continueWatching, setContinueWatching] = useState([]);
     const [rows, setRows] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!session.client || !session.userId) return;
@@ -44,6 +51,7 @@ export default function HomeScreen() {
                 }))
             );
             setRows(latest.filter((row) => row.items.length > 0));
+            setLoading(false);
         });
     }, [session.client, session.userId]);
 
@@ -52,10 +60,23 @@ export default function HomeScreen() {
             style={styles.screen}
             contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
         >
-            <View style={styles.header}>
+            <View style={[styles.header, { top: insets.top + 4 }]}>
                 <Text style={styles.wordmark}>HOMEFLIX</Text>
+                <Pressable onPress={() => router.replace('/(tabs)/profile')}>
+                    {session.user?.PrimaryImageTag ? (
+                        <Image
+                            source={{
+                                uri: `${session.serverUrl}/Users/${session.user.Id}/Images/Primary?tag=${session.user.PrimaryImageTag}&quality=90`
+                            }}
+                            style={styles.headerAvatar}
+                        />
+                    ) : (
+                        <View style={[styles.headerAvatar, styles.headerAvatarFallback]} />
+                    )}
+                </Pressable>
             </View>
             <BillboardView items={billboard} baseUrl={session.serverUrl} />
+            {loading && billboard.length === 0 ? <HomeSkeleton /> : null}
             <MediaRow
                 title="Continue Watching"
                 items={continueWatching}
@@ -81,9 +102,20 @@ const styles = StyleSheet.create({
     },
     header: {
         position: 'absolute',
-        top: 60,
         left: spacing.screen,
-        zIndex: 2
+        right: spacing.screen,
+        zIndex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+    },
+    headerAvatar: {
+        width: 30,
+        height: 30,
+        borderRadius: 6
+    },
+    headerAvatarFallback: {
+        backgroundColor: '#5f312e'
     },
     wordmark: {
         color: colors.accent,

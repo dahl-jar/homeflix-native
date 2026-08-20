@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+import { ScreenBackground } from '../src/components/ScreenBackground.js';
 import { useSession } from '../src/session/SessionProvider.js';
 import { fetchPublicUsers, toGateCard, authenticate } from '../src/api/auth.js';
 import { userImageUrl } from '../src/api/imageUrl.js';
@@ -35,6 +36,7 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.screen}>
+            <ScreenBackground />
             <Text style={styles.wordmark}>HOMEFLIX</Text>
             <Text style={styles.title}>Who's watching?</Text>
             <FlatList
