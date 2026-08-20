@@ -14,6 +14,7 @@ import { GhostTile } from '../../src/components/GhostTile.js';
 import { PickerOverlay } from '../../src/components/PickerOverlay.js';
 import { PosterCard } from '../../src/components/PosterCard.js';
 import { sourceOptions, AUTO_SOURCE_KEY } from '../../src/features/detail/sources.js';
+import { defaultSeasonIndex } from '../../src/features/detail/seasons.js';
 import { playerLauncher } from '../../src/playback/playerLauncher.js';
 import { colors, radius, spacing } from '../../src/theme/tokens.js';
 
@@ -50,7 +51,7 @@ export default function DetailScreen() {
         if (!item || item.Type !== 'Series') return;
         fetchSeasons(session.client, session.userId, item.Id).then((result) => {
             setSeasons(result.Items);
-            setSeasonIndex(0);
+            setSeasonIndex(defaultSeasonIndex(result.Items));
         });
     }, [item]);
 
