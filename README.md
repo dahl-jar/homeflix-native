@@ -46,6 +46,14 @@ xcodebuild build -workspace ios/Homeflix.xcworkspace -scheme Homeflix \
   -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO
 ```
 
+## Audit ignores
+
+`pnpm-workspace.yaml` ignores three advisories that live in dev-time build
+tooling only (Metro's `image-size`, the xcode config plugin's `uuid`) and
+have no patched release compatible with Expo SDK 57. None of that code ships
+in the app binary. Re-check on every SDK bump and drop the ignores once
+upstream releases fixes.
+
 ## Server endpoints
 
 `src/session/serverResolver.js`: LAN `http://homeflix.invalid:8096`, private network
