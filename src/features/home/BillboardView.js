@@ -51,12 +51,19 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
                     style={{ width, height: width * HEIGHT_FACTOR }}
                 />
             </MaskedView>
-            <View style={styles.seam} pointerEvents="none">
-                <BlurView intensity={8} tint="dark" style={styles.seamBand} />
-                <BlurView intensity={20} tint="dark" style={styles.seamBand} />
-                <BlurView intensity={38} tint="dark" style={styles.seamBand} />
-                <BlurView intensity={60} tint="dark" style={styles.seamBand} />
-            </View>
+            <MaskedView
+                style={styles.seam}
+                pointerEvents="none"
+                maskElement={
+                    <LinearGradient
+                        colors={['transparent', '#000000', '#000000']}
+                        locations={[0, 0.55, 1]}
+                        style={{ flex: 1 }}
+                    />
+                }
+            >
+                <BlurView intensity={50} tint="dark" style={{ flex: 1 }} />
+            </MaskedView>
             <LinearGradient
                 colors={['transparent', 'rgba(21, 19, 19, 0.55)', 'rgba(21, 19, 19, 0.2)']}
                 locations={[0, 0.6, 1]}
@@ -93,10 +100,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: 168
-    },
-    seamBand: {
-        flex: 1
+        height: 200
     },
     shade: {
         position: 'absolute',
