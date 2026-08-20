@@ -103,12 +103,12 @@ export default function DetailScreen() {
                 />
 
                 <View style={styles.tiles}>
-                    <GhostTile glyph="▤" label="Trailer" onPress={() => playerLauncher.play(item, 'trailer')} />
-                    <GhostTile glyph="✓" label={item.UserData?.Played ? 'Played' : 'Mark Played'} onPress={() => {}} />
-                    <GhostTile glyph="↺" label="Restart" onPress={() => playerLauncher.play(item, 'restart')} />
+                    <GhostTile icon="film-outline" label="Trailer" onPress={() => playerLauncher.play(item, 'trailer')} />
+                    <GhostTile icon="checkmark-circle-outline" label={item.UserData?.Played ? 'Played' : 'Mark Played'} onPress={() => {}} />
+                    <GhostTile icon="refresh-outline" label="Restart" onPress={() => playerLauncher.play(item, 'restart')} />
                     <GhostTile
-                        glyph="≣"
-                        label={sourceKey === AUTO_SOURCE_KEY ? 'Source' : 'Source ✓'}
+                        icon={sourceKey === AUTO_SOURCE_KEY ? 'layers-outline' : 'layers'}
+                        label="Source"
                         onPress={() => setSourcePickerOpen(true)}
                     />
                 </View>

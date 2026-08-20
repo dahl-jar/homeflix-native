@@ -1,12 +1,13 @@
 import { Pressable, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { colors } from '../theme/tokens.js';
 
-/** Quiet secondary action: icon glyph above a small label. */
-export function GhostTile({ glyph, label, onPress }) {
+/** Quiet secondary action: one consistent icon above a small label. */
+export function GhostTile({ icon, label, onPress }) {
     return (
         <Pressable style={styles.tile} onPress={onPress}>
-            <Text style={styles.glyph}>{glyph}</Text>
+            <Ionicons name={icon} size={22} color={colors.textDim} />
             <Text style={styles.label}>{label}</Text>
         </Pressable>
     );
@@ -17,10 +18,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: 76,
         paddingVertical: 8
-    },
-    glyph: {
-        color: colors.textDim,
-        fontSize: 22
     },
     label: {
         color: colors.textDim,
