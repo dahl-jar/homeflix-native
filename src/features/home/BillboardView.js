@@ -3,7 +3,6 @@ import { Text, View, Pressable, StyleSheet, useWindowDimensions } from 'react-na
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { BlurView } from 'expo-blur';
 
 import { BackdropImage } from '../../components/BackdropImage.js';
 import { PlayPill } from '../../components/PlayPill.js';
@@ -41,7 +40,7 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
                 maskElement={
                     <LinearGradient
                         colors={['#000000', '#000000', 'transparent']}
-                        locations={[0, 0.6, 1]}
+                        locations={[0, 0.45, 0.94]}
                         style={{ flex: 1 }}
                     />
                 }
@@ -50,19 +49,6 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
                     uri={backdropUrl(baseUrl, item, 1280)}
                     style={{ width, height: width * HEIGHT_FACTOR }}
                 />
-            </MaskedView>
-            <MaskedView
-                style={styles.seam}
-                pointerEvents="none"
-                maskElement={
-                    <LinearGradient
-                        colors={['transparent', '#000000', '#000000']}
-                        locations={[0, 0.55, 1]}
-                        style={{ flex: 1 }}
-                    />
-                }
-            >
-                <BlurView intensity={50} tint="dark" style={{ flex: 1 }} />
             </MaskedView>
             <LinearGradient
                 colors={['transparent', 'rgba(21, 19, 19, 0.55)', 'rgba(21, 19, 19, 0.2)']}
@@ -95,13 +81,6 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
 }
 
 const styles = StyleSheet.create({
-    seam: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: 200
-    },
     shade: {
         position: 'absolute',
         left: 0,

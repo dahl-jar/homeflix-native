@@ -68,7 +68,7 @@ export default function HomeScreen() {
             {heroItem ? (
                 <Image
                     source={{ uri: backdropUrl(session.serverUrl, heroItem, 440) }}
-                    style={[styles.heroAmbient, { top: width * 0.72, height: width * 0.53 + 460 }]}
+                    style={[styles.heroAmbient, { top: 0, height: width * 1.25 + 460 }]}
                     contentFit="cover"
                     blurRadius={90}
                     transition={600}
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        opacity: 0.6
+        opacity: 0.85
     },
     wordmark: {
         color: colors.accent,
