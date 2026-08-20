@@ -27,7 +27,7 @@ jobs:
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.4'
+          xcode-version: '26.1'
 
       - name: Prebuild iOS project
         run: pnpm exec expo prebuild --platform ios --no-install
