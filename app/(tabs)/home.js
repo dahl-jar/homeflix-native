@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useWindowDimensions } from 'react-native';
-import { useSession } from '../../src/session/SessionProvider.js';
-import { fetchRecommendations } from '../../src/api/recommendations.js';
-import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItemsByIds } from '../../src/api/items.js';
 import { backdropUrl } from '../../src/api/imageUrl.js';
+import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItemsByIds } from '../../src/api/items.js';
+import { fetchRecommendations } from '../../src/api/recommendations.js';
 import { billboardItems } from '../../src/features/home/billboard.js';
-import { dropStreamRows } from '../../src/features/home/latestRow.js';
 import { BillboardView } from '../../src/features/home/BillboardView.js';
-import { MediaRow } from '../../src/features/home/MediaRow.js';
 import { HomeSkeleton } from '../../src/features/home/HomeSkeleton.js';
+import { dropStreamRows } from '../../src/features/home/latestRow.js';
+import { MediaRow } from '../../src/features/home/MediaRow.js';
+import { useSession } from '../../src/session/SessionProvider.js';
 import { colors, spacing } from '../../src/theme/tokens.js';
 
 const BOTTOM_CLEARANCE = 110;
+const RETRY_DELAY_MS = 3000;
 
 export default function HomeScreen() {
     const session = useSession();
@@ -29,12 +29,10 @@ export default function HomeScreen() {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [heroItem, setHeroItem] = useState(null);
-
-    const RETRY_DELAY_MS = 3000;
+    const { client, userId } = session;
 
     useEffect(() => {
-        if (!session.client || !session.userId) return;
-        const { client, userId } = session;
+        if (!client || !userId) return;
 
         const loadBillboard = () => fetchRecommendations(client)
             .then(async (recs) => {
@@ -69,7 +67,7 @@ export default function HomeScreen() {
             setRows(latest.filter((row) => row.items.length > 0));
             setLoading(false);
         });
-    }, [session.client, session.userId]);
+    }, [client, userId]);
 
     return (
         <ScrollView

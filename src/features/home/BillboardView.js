@@ -1,12 +1,12 @@
+import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, View, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 
+import { backdropUrl } from '../../api/imageUrl.js';
 import { BackdropImage } from '../../components/BackdropImage.js';
 import { PlayPill } from '../../components/PlayPill.js';
-import { backdropUrl } from '../../api/imageUrl.js';
 import { colors, radius, spacing } from '../../theme/tokens.js';
 
 const ROTATE_MS = 12000;
@@ -22,7 +22,7 @@ export function BillboardView({ items, baseUrl, onActiveItem }) {
 
     useEffect(() => {
         if (item && onActiveItem) onActiveItem(item);
-    }, [item?.Id]);
+    }, [item, onActiveItem]);
 
     useEffect(() => {
         if (items.length < 2) return undefined;

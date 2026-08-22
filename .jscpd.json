@@ -1,0 +1,20 @@
+{
+  "threshold": 0,
+  "reporters": ["console"],
+  "minLines": 5,
+  "minTokens": 50,
+  "maxLines": 1000,
+  "maxSize": "100kb",
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/ios/**",
+    "**/android/**",
+    "**/.expo/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/report/**",
+    "**/__tests__/**",
+    "**/fixtures/**"
+  ]
+}

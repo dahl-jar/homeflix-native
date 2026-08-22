@@ -1,0 +1,57 @@
+import { Pressable, StyleSheet } from 'react-native';
+
+import { NextEpisodeOverlay } from './NextEpisodeOverlay.js';
+import { PlayerControls } from './PlayerControls.js';
+import { SkipSegmentButton } from './SkipSegmentButton.js';
+
+export function PlaybackInteractiveLayer({
+    contentFit,
+    controls,
+    episodeMenu,
+    item,
+    locked,
+    nextEpisode,
+    onExit,
+    onToggleContentFit,
+    onToggleLock,
+    pipeline,
+    playback,
+    serverUrl,
+    skip
+}) {
+    if (pipeline.visible) return null;
+    return (
+        <>
+            <Pressable
+                accessibilityElementsHidden
+                onPress={controls.toggle}
+                style={StyleSheet.absoluteFill}
+            />
+            <PlayerControls
+                contentFit={contentFit}
+                episodeMenu={episodeMenu}
+                item={item}
+                locked={locked}
+                nextEpisode={nextEpisode}
+                onExit={onExit}
+                onInteract={controls.show}
+                onToggleContentFit={onToggleContentFit}
+                onToggleLock={onToggleLock}
+                playback={playback}
+                serverUrl={serverUrl}
+                visible={controls.visible}
+            />
+            {!locked && !nextEpisode.active ? (
+                <SkipSegmentButton segment={skip.activeSegment} onPress={skip.skip} />
+            ) : null}
+            {!locked && nextEpisode.active ? (
+                <NextEpisodeOverlay
+                    episode={nextEpisode.nextEpisode}
+                    onCancel={nextEpisode.cancel}
+                    onPlayNext={nextEpisode.playNext}
+                    remainingSeconds={nextEpisode.remainingSeconds}
+                />
+            ) : null}
+        </>
+    );
+}

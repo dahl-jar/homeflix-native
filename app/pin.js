@@ -1,10 +1,11 @@
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Text, View, Pressable, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
-import { useSession } from '../src/session/SessionProvider.js';
 import { authenticate } from '../src/api/auth.js';
+import { BackButton } from '../src/components/BackButton.js';
 import { createPinModel } from '../src/features/auth/pinModel.js';
+import { useSession } from '../src/session/SessionProvider.js';
 import { colors } from '../src/theme/tokens.js';
 
 const KEYPAD = [1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'back'];
@@ -43,9 +44,7 @@ export default function PinScreen() {
 
     return (
         <View style={styles.screen}>
-            <Pressable style={styles.back} onPress={() => router.back()}>
-                <Text style={styles.backGlyph}>‹</Text>
-            </Pressable>
+            <BackButton style={styles.back} onPress={() => router.back()} />
             <Text style={styles.title}>Enter your PIN to access this profile.</Text>
             <View style={styles.boxes}>
                 {Array.from({ length: PIN_LENGTH }, (_, i) => (
@@ -81,22 +80,8 @@ const styles = StyleSheet.create({
         paddingTop: 120
     },
     back: {
-        position: 'absolute',
         top: 62,
-        left: 16,
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: colors.glassBg,
-        borderWidth: 1,
-        borderColor: colors.glassBorder,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    backGlyph: {
-        color: colors.text,
-        fontSize: 24,
-        lineHeight: 26
+        left: 16
     },
     title: {
         color: colors.text,

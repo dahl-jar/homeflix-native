@@ -1,5 +1,5 @@
-import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 
 import { SORT_OPTIONS, RATING_OPTIONS, STATUS_OPTIONS, buildLibraryQuery, decadesFromYears } from '../filters.js';
 

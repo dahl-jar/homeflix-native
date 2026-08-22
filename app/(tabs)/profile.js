@@ -1,13 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View, Pressable, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
 
-import { useSession } from '../../src/session/SessionProvider.js';
 import { ScreenBackground } from '../../src/components/ScreenBackground.js';
+import { useSession } from '../../src/session/SessionProvider.js';
 import { colors, radius, spacing } from '../../src/theme/tokens.js';
 
 const BOTTOM_CLEARANCE = 120;

@@ -3,8 +3,8 @@
 The native Homeflix frontend: React Native (Expo SDK 57, expo-router,
 JavaScript ESM). Profile gate, home with recommendation billboard and
 Continue Watching, per-library grids, search, and detail pages against the
-Jellyfin API. Playback is a stub (`src/playback/playerLauncher.js`); the
-custom player replaces that module and nothing else.
+Jellyfin API. Playback uses a custom `expo-video` player and the server-owned
+Homeflix playback pipeline.
 
 Roadmap: iOS first, Android later, TV after that. Every dependency must run
 on Android too.
@@ -18,8 +18,15 @@ pnpm test             # node:test over src/**/*.test.js
 pnpm check            # tests + audit (the gate)
 ```
 
-On a real iPhone: install Expo Go from the App Store, scan the QR from
-`pnpm start` (same network as the Mac).
+Playback uses native Expo modules. Run the development build with `pnpm ios`.
+The app restores portrait orientation when the player closes.
+
+## Playback
+
+`src/playback/` contains the custom controls, pipeline progress screen, source
+negotiation, signed source release, reporting, recovery, and separate audio and
+subtitle selectors. Source and track policy runs on the Jellyfin server. The
+API contract lives in the local-flix repository at `docs/playback-api.md`.
 
 ## Fixtures
 
@@ -54,7 +61,7 @@ have no patched release compatible with Expo SDK 57. None of that code ships
 in the app binary. Re-check on every SDK bump and drop the ignores once
 upstream releases fixes.
 
-## Server endpoints
+## Server resolution
 
-`src/session/serverResolver.js`: LAN `http://homeflix.invalid:8096`, private network
-`http://homeflix.invalid:8096` (needs private network when away from home).
+`src/session/serverResolver.js` selects the configured LAN or private network Jellyfin
+address.

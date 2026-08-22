@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { createClient } from '../api/client.js';
 import { fetchMe } from '../api/auth.js';
+import { createClient } from '../api/client.js';
+
 import { resolveServer } from './serverResolver.js';
 import { saveSession, loadSession, clearSession } from './tokenStore.js';
 

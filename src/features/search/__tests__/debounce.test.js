@@ -1,5 +1,5 @@
-import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { test, mock } from 'node:test';
 
 import { createSearchController } from '../debounce.js';
 

@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Text, TextInput, View, StyleSheet, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useSession } from '../../src/session/SessionProvider.js';
 import { searchItems, fetchItemsByIds } from '../../src/api/items.js';
 import { fetchRecommendations } from '../../src/api/recommendations.js';
-import { createSearchController } from '../../src/features/search/debounce.js';
-import { PosterCard } from '../../src/components/PosterCard.js';
+import { GridPosterCard } from '../../src/components/GridPosterCard.js';
 import { ScreenBackground } from '../../src/components/ScreenBackground.js';
-import { primaryUrl } from '../../src/api/imageUrl.js';
+import { createSearchController } from '../../src/features/search/debounce.js';
+import { useSession } from '../../src/session/SessionProvider.js';
 import { colors, radius, spacing } from '../../src/theme/tokens.js';
 
 const COLUMNS = 3;
@@ -17,18 +15,17 @@ const BOTTOM_CLEARANCE = 110;
 
 export default function SearchScreen() {
     const session = useSession();
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const [results, setResults] = useState([]);
     const [popular, setPopular] = useState([]);
     const [query, setQuery] = useState('');
+    const { client, serverUrl, userId } = session;
 
     const cardWidth = (width - spacing.screen * 2 - spacing.card * (COLUMNS - 1)) / COLUMNS;
 
     useEffect(() => {
-        if (!session.client || !session.userId) return;
-        const { client, userId } = session;
+        if (!client || !userId) return;
         fetchRecommendations(client)
             .then(async (recs) => {
                 const topRanked = [...recs].sort((a, b) => a.Rank - b.Rank).slice(0, 12);
@@ -41,18 +38,17 @@ export default function SearchScreen() {
                 setPopular(topRanked.map((rec) => byId[rec.ItemId]).filter(Boolean));
             })
             .catch(() => setPopular([]));
-    }, [session.client, session.userId]);
+    }, [client, userId]);
 
     const controller = useMemo(() => {
-        if (!session.client || !session.userId) return null;
-        const { client, userId } = session;
+        if (!client || !userId) return null;
         return createSearchController({
             run: async (query, signal) => {
                 const result = await searchItems(client, userId, query);
                 if (!signal.aborted) setResults(result.Items);
             }
         });
-    }, [session.client, session.userId]);
+    }, [client, userId]);
 
     return (
         <View style={[styles.screen, { paddingTop: insets.top + 12 }]}>
@@ -81,12 +77,11 @@ export default function SearchScreen() {
                 columnWrapperStyle={styles.row}
                 contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
                 renderItem={({ item }) => (
-                    <PosterCard
+                    <GridPosterCard
                         item={item}
-                        imageUri={primaryUrl(session.serverUrl, item, 300)}
+                        serverUrl={serverUrl}
                         width={cardWidth}
                         showTitle
-                        onPress={() => router.push(`/details/${item.Id}`)}
                     />
                 )}
             />

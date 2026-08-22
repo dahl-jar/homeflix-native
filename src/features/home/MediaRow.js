@@ -1,9 +1,9 @@
-import { FlatList, Text, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { FlatList, Text, View, StyleSheet } from 'react-native';
 
+import { primaryUrl } from '../../api/imageUrl.js';
 import { PosterCard } from '../../components/PosterCard.js';
 import { ProgressCard } from '../../components/ProgressCard.js';
-import { primaryUrl } from '../../api/imageUrl.js';
 import { colors, spacing } from '../../theme/tokens.js';
 
 const POSTER_WIDTH = 110;

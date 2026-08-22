@@ -3,7 +3,7 @@ import { Pressable, Text, StyleSheet } from 'react-native';
 import { playerLauncher } from '../playback/playerLauncher.js';
 import { radius } from '../theme/tokens.js';
 
-/** The one Play control: full-width white pill, wired only to the stub launcher. */
+/** The primary play control for detail and billboard surfaces. */
 export function PlayPill({ item, origin, label = 'Play', mediaSourceId = null }) {
     return (
         <Pressable

@@ -1,15 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, View, Pressable, StyleSheet, FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-
-import { ScreenBackground } from '../src/components/ScreenBackground.js';
-import { useSession } from '../src/session/SessionProvider.js';
 import { fetchPublicUsers, toGateCard, authenticate } from '../src/api/auth.js';
 import { userImageUrl } from '../src/api/imageUrl.js';
+import { ScreenBackground } from '../src/components/ScreenBackground.js';
+import { useSession } from '../src/session/SessionProvider.js';
 import { colors, radius } from '../src/theme/tokens.js';
 
 const CARD_SIZE = 110;
@@ -38,7 +37,7 @@ export default function LoginScreen() {
         <View style={styles.screen}>
             <ScreenBackground />
             <Text style={styles.wordmark}>HOMEFLIX</Text>
-            <Text style={styles.title}>Who's watching?</Text>
+            <Text style={styles.title}>Who’s watching?</Text>
             <FlatList
                 data={cards}
                 numColumns={2}

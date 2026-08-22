@@ -1,7 +1,9 @@
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 
-import { BackdropImage } from './BackdropImage.js';
 import { colors, radius } from '../theme/tokens.js';
+
+import { BackdropImage } from './BackdropImage.js';
+import { CardFallback } from './CardFallback.js';
 
 const POSTER_RATIO = 2 / 3;
 
@@ -14,11 +16,7 @@ export function PosterCard({ item, imageUri, width, onPress, showTitle = false }
                     style={[styles.poster, { width, height: width / POSTER_RATIO }]}
                 />
                 {!imageUri ? (
-                    <View style={styles.fallback}>
-                        <Text numberOfLines={3} style={styles.fallbackText}>
-                            {item.Name}
-                        </Text>
-                    </View>
+                    <CardFallback label={item.Name} numberOfLines={3} paddingHorizontal={8} />
                 ) : null}
             </View>
             {showTitle ? (
@@ -40,21 +38,5 @@ const styles = StyleSheet.create({
         color: colors.textDim,
         fontSize: 12,
         marginTop: 4
-    },
-    fallback: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 8
-    },
-    fallbackText: {
-        color: colors.textDim,
-        fontSize: 13,
-        fontWeight: '600',
-        textAlign: 'center'
     }
 });

@@ -1,5 +1,5 @@
-import { Pressable, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, StyleSheet } from 'react-native';
 
 import { colors } from '../theme/tokens.js';
 

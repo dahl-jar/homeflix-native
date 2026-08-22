@@ -1,7 +1,7 @@
-import { useRef } from 'react';
-import { Modal, Pressable, Text, ScrollView, StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { useRef } from 'react';
+import { Modal, Pressable, Text, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../theme/tokens.js';
@@ -15,19 +15,37 @@ const OPTION_HEIGHT = 45;
  */
 export function PickerOverlay({ visible, title, entries, isSelected, onChoose, onClose }) {
     const insets = useSafeAreaInsets();
+    const { height, width } = useWindowDimensions();
+    const landscape = width > height;
     const scrollRef = useRef(null);
 
     return (
-        <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+        <Modal
+            transparent
+            visible={visible}
+            animationType="fade"
+            supportedOrientations={['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right']}
+            onRequestClose={onClose}
+        >
             <BlurView intensity={70} tint="dark" style={styles.overlay}>
                 <View style={styles.overlayShade} />
-                <Text style={[styles.overlayTitle, { marginTop: insets.top + 24 }]}>
+                <Text style={[
+                    styles.overlayTitle,
+                    { marginTop: Math.max(insets.top, landscape ? 12 : 24) }
+                ]}>
                     {title.toUpperCase()}
                 </Text>
                 <ScrollView
                     ref={scrollRef}
                     style={styles.list}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[
+                        styles.listContent,
+                        landscape ? styles.listContentLandscape : styles.listContentPortrait,
+                        {
+                            paddingLeft: Math.max(insets.left, 24),
+                            paddingRight: Math.max(insets.right, 24)
+                        }
+                    ]}
                     showsVerticalScrollIndicator={false}
                     onLayout={(event) => {
                         const viewport = event.nativeEvent.layout.height;
@@ -38,6 +56,9 @@ export function PickerOverlay({ visible, title, entries, isSelected, onChoose, o
                 >
                     {entries.map((entry) => (
                         <Pressable
+                            accessibilityLabel={entry.label}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isSelected(entry) }}
                             key={entry.key ?? 'clear'}
                             style={styles.option}
                             onPress={() => onChoose(entry.key)}
@@ -48,7 +69,10 @@ export function PickerOverlay({ visible, title, entries, isSelected, onChoose, o
                         </Pressable>
                     ))}
                 </ScrollView>
-                <View style={[styles.closeWrap, { paddingBottom: insets.bottom + 24 }]}>
+                <View style={[
+                    styles.closeWrap,
+                    { paddingBottom: Math.max(insets.bottom, landscape ? 12 : 24) }
+                ]}>
                     <Pressable style={styles.close} onPress={onClose}>
                         <Ionicons name="close" size={26} color="#141414" />
                     </Pressable>
@@ -82,11 +106,18 @@ const styles = StyleSheet.create({
     listContent: {
         flexGrow: 1,
         justifyContent: 'center',
-        paddingVertical: 32,
-        paddingHorizontal: 24
+        alignItems: 'center'
+    },
+    listContentLandscape: {
+        paddingVertical: 12
+    },
+    listContentPortrait: {
+        paddingVertical: 32
     },
     option: {
         height: OPTION_HEIGHT,
+        width: '100%',
+        maxWidth: 720,
         justifyContent: 'center',
         alignItems: 'center'
     },

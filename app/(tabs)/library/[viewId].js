@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { FlatList, ScrollView, Pressable, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, ScrollView, Pressable, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useSession } from '../../../src/session/SessionProvider.js';
 import { fetchLibraryPage, fetchFilterOptions, fetchItem } from '../../../src/api/items.js';
-import { createPager } from '../../../src/features/library/paging.js';
+import { DropdownPill } from '../../../src/components/DropdownPill.js';
+import { GridPosterCard } from '../../../src/components/GridPosterCard.js';
+import { ScreenBackground } from '../../../src/components/ScreenBackground.js';
 import {
     SORT_OPTIONS,
     RATING_OPTIONS,
@@ -14,67 +15,90 @@ import {
     buildLibraryQuery,
     decadesFromYears
 } from '../../../src/features/library/filters.js';
-import { DropdownPill } from '../../../src/components/DropdownPill.js';
-import { PosterCard } from '../../../src/components/PosterCard.js';
-import { ScreenBackground } from '../../../src/components/ScreenBackground.js';
-import { primaryUrl } from '../../../src/api/imageUrl.js';
+import { createPager } from '../../../src/features/library/paging.js';
+import { useSession } from '../../../src/session/SessionProvider.js';
 import { colors, spacing } from '../../../src/theme/tokens.js';
 
 const COLUMNS = 3;
 const BOTTOM_CLEARANCE = 110;
+const PAGE_SIZE = 100;
+
+function createFilterState(viewId) {
+    return {
+        viewId,
+        sortKey: SORT_OPTIONS[0].key,
+        genre: null,
+        decadeKey: null,
+        ratingKey: null,
+        statusKey: null
+    };
+}
 
 export default function LibraryScreen() {
     const session = useSession();
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const { viewId } = useLocalSearchParams();
     const pagerRef = useRef(null);
-    const loadingRef = useRef(false);
-    const [items, setItems] = useState([]);
+    const loadingKeyRef = useRef(null);
+    const [pageState, setPageState] = useState({ queryKey: null, items: [], total: 0 });
     const [genres, setGenres] = useState([]);
     const [decadeOptions, setDecadeOptions] = useState([]);
     const [viewName, setViewName] = useState('');
-    const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].key);
-    const [genre, setGenre] = useState(null);
-    const [decadeKey, setDecadeKey] = useState(null);
-    const [ratingKey, setRatingKey] = useState(null);
-    const [statusKey, setStatusKey] = useState(null);
+    const [filterState, setFilterState] = useState(() => createFilterState(viewId));
+    const { client, serverUrl, userId } = session;
+    const activeFilters = filterState.viewId === viewId ? filterState : createFilterState(viewId);
+    const { sortKey, genre, decadeKey, ratingKey, statusKey } = activeFilters;
 
-    const selection = {
+    const selection = useMemo(() => ({
         sort: SORT_OPTIONS.find((option) => option.key === sortKey),
         genre,
         decade: decadeOptions.find((option) => option.key === decadeKey) ?? null,
         rating: RATING_OPTIONS.find((option) => option.key === ratingKey) ?? null,
         status: STATUS_OPTIONS.find((option) => option.key === statusKey) ?? null
-    };
+    }), [decadeKey, decadeOptions, genre, ratingKey, sortKey, statusKey]);
+    const queryKey = JSON.stringify([viewId, sortKey, genre, decadeKey, ratingKey, statusKey]);
+    const items = pageState.queryKey === queryKey ? pageState.items : [];
+    const total = pageState.queryKey === queryKey ? pageState.total : 0;
     const cardWidth = (width - spacing.screen * 2 - spacing.card * (COLUMNS - 1)) / COLUMNS;
 
-    const loadPage = async () => {
-        if (loadingRef.current) return;
-        loadingRef.current = true;
-        const pager = pagerRef.current;
-        const result = await fetchLibraryPage(session.client, session.userId, {
-            parentId: viewId,
-            startIndex: pager.nextStartIndex(),
-            limit: pager.pageSize,
-            ...buildLibraryQuery(selection)
-        });
-        pager.applyPage(result);
-        setItems([...pager.items]);
-        loadingRef.current = false;
-    };
+    const updateFilters = useCallback((changes) => {
+        setFilterState((current) => ({
+            ...(current.viewId === viewId ? current : createFilterState(viewId)),
+            ...changes
+        }));
+    }, [viewId]);
+
+    const loadPage = useCallback(async (pager = pagerRef.current) => {
+        if (!pager || loadingKeyRef.current === queryKey) return;
+        loadingKeyRef.current = queryKey;
+
+        try {
+            const result = await fetchLibraryPage(client, userId, {
+                parentId: viewId,
+                startIndex: pager.nextStartIndex(),
+                limit: pager.pageSize,
+                ...buildLibraryQuery(selection)
+            });
+            pager.applyPage(result);
+            setPageState({ queryKey, items: [...pager.items], total: pager.total });
+        } catch {
+            return;
+        } finally {
+            if (loadingKeyRef.current === queryKey) loadingKeyRef.current = null;
+        }
+    }, [client, queryKey, selection, userId, viewId]);
 
     useEffect(() => {
-        if (!session.client || !session.userId || !viewId) return;
-        pagerRef.current = createPager({ pageSize: 100 });
-        setItems([]);
-        loadPage();
-    }, [session.client, session.userId, viewId, sortKey, genre, decadeKey, ratingKey, statusKey]);
+        if (!client || !userId || !viewId) return;
+        const pager = createPager({ pageSize: PAGE_SIZE });
+        pagerRef.current = pager;
+        void loadPage(pager);
+    }, [client, loadPage, userId, viewId]);
 
     useEffect(() => {
-        if (!session.client || !session.userId || !viewId) return;
-        fetchFilterOptions(session.client, session.userId, viewId)
+        if (!client || !userId || !viewId) return;
+        fetchFilterOptions(client, userId, viewId)
             .then(({ genres: names, years }) => {
                 setGenres(names);
                 setDecadeOptions(decadesFromYears(years));
@@ -83,14 +107,10 @@ export default function LibraryScreen() {
                 setGenres([]);
                 setDecadeOptions([]);
             });
-        fetchItem(session.client, session.userId, viewId)
+        fetchItem(client, userId, viewId)
             .then((view) => setViewName(view.Name))
             .catch(() => setViewName(''));
-        setGenre(null);
-        setDecadeKey(null);
-        setRatingKey(null);
-        setStatusKey(null);
-    }, [session.client, session.userId, viewId]);
+    }, [client, userId, viewId]);
 
     return (
         <View style={styles.screen}>
@@ -98,8 +118,8 @@ export default function LibraryScreen() {
             <View style={{ paddingTop: insets.top + 8 }}>
                 <View style={styles.titleRow}>
                     <Text style={styles.screenTitle}>{viewName}</Text>
-                    {pagerRef.current?.total ? (
-                        <Text style={styles.countInline}>{pagerRef.current.total.toLocaleString()}</Text>
+                    {total ? (
+                        <Text style={styles.countInline}>{total.toLocaleString()}</Text>
                     ) : null}
                 </View>
                 <ScrollView
@@ -111,10 +131,12 @@ export default function LibraryScreen() {
                         <Pressable
                             style={styles.clearPill}
                             onPress={() => {
-                                setGenre(null);
-                                setDecadeKey(null);
-                                setRatingKey(null);
-                                setStatusKey(null);
+                                updateFilters({
+                                    genre: null,
+                                    decadeKey: null,
+                                    ratingKey: null,
+                                    statusKey: null
+                                });
                             }}
                         >
                             <Ionicons name="close" size={16} color={colors.text} />
@@ -124,35 +146,35 @@ export default function LibraryScreen() {
                         title="Sort"
                         options={SORT_OPTIONS}
                         selected={sortKey}
-                        onSelect={(key) => setSortKey(key ?? SORT_OPTIONS[0].key)}
+                        onSelect={(key) => updateFilters({ sortKey: key ?? SORT_OPTIONS[0].key })}
                     />
                     <DropdownPill
                         title="Genre"
                         clearLabel="All genres"
                         options={genres.map((name) => ({ key: name, label: name }))}
                         selected={genre}
-                        onSelect={setGenre}
+                        onSelect={(key) => updateFilters({ genre: key })}
                     />
                     <DropdownPill
                         title="Decade"
                         clearLabel="Any decade"
                         options={decadeOptions}
                         selected={decadeKey}
-                        onSelect={setDecadeKey}
+                        onSelect={(key) => updateFilters({ decadeKey: key })}
                     />
                     <DropdownPill
                         title="Rating"
                         clearLabel="Any rating"
                         options={RATING_OPTIONS}
                         selected={ratingKey}
-                        onSelect={setRatingKey}
+                        onSelect={(key) => updateFilters({ ratingKey: key })}
                     />
                     <DropdownPill
                         title="Watched"
                         clearLabel="All"
                         options={STATUS_OPTIONS}
                         selected={statusKey}
-                        onSelect={setStatusKey}
+                        onSelect={(key) => updateFilters({ statusKey: key })}
                     />
                 </ScrollView>
             </View>
@@ -172,11 +194,10 @@ export default function LibraryScreen() {
                     if (pager && pager.shouldLoadMore(items.length - 1)) loadPage();
                 }}
                 renderItem={({ item }) => (
-                    <PosterCard
+                    <GridPosterCard
                         item={item}
-                        imageUri={primaryUrl(session.serverUrl, item, 300)}
+                        serverUrl={serverUrl}
                         width={cardWidth}
-                        onPress={() => router.push(`/details/${item.Id}`)}
                     />
                 )}
             />

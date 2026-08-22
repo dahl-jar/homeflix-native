@@ -15,10 +15,12 @@ const CLIENT_IDENTITY =
  * ApiError. Jellyfin rejects auth calls that lack the identity fields.
  */
 export function createClient({ baseUrl, token, fetchFn = fetch }) {
+    const authorization = token ? `${CLIENT_IDENTITY}, Token="${token}"` : CLIENT_IDENTITY;
     const headers = {
         'Content-Type': 'application/json',
-        Authorization: token ? `${CLIENT_IDENTITY}, Token="${token}"` : CLIENT_IDENTITY
+        Authorization: authorization
     };
+    const mediaHeaders = Object.freeze({ Authorization: authorization });
 
     const buildUrl = (path, params) => {
         if (!params) return `${baseUrl}${path}`;
@@ -33,19 +35,37 @@ export function createClient({ baseUrl, token, fetchFn = fetch }) {
         return response.json();
     };
 
+    const parseText = async (response, path) => {
+        if (!response.ok) throw new ApiError(response.status, path);
+        return response.text();
+    };
+
     return {
         baseUrl,
         async get(path, params) {
             const response = await fetchFn(buildUrl(path, params), { headers });
             return parse(response, path);
         },
-        async post(path, body) {
-            const response = await fetchFn(buildUrl(path), {
+        async getText(path, params) {
+            const response = await fetchFn(buildUrl(path, params), { headers });
+            return parseText(response, path);
+        },
+        mediaHeaders,
+        async post(path, body, params) {
+            const response = await fetchFn(buildUrl(path, params), {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(body)
             });
             return parse(response, path);
+        },
+        async postNoContent(path, body, params) {
+            const response = await fetchFn(buildUrl(path, params), {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) throw new ApiError(response.status, path);
         }
     };
 }

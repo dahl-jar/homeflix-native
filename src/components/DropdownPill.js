@@ -1,9 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
+import { colors, radius } from '../theme/tokens.js';
 
 import { PickerOverlay } from './PickerOverlay.js';
-import { colors, radius } from '../theme/tokens.js';
 
 /**
  * A filter pill that opens the fullscreen picker. `options` are

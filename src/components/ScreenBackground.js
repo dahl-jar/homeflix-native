@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet } from 'react-native';
 
 import { colors } from '../theme/tokens.js';
 
