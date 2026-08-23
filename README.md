@@ -27,6 +27,8 @@ The app restores portrait orientation when the player closes.
 negotiation, signed source release, reporting, recovery, and separate audio and
 subtitle selectors. Source and track policy runs on the Jellyfin server. The
 API contract lives in the local-flix repository at `docs/playback-api.md`.
+Player behavior and the iOS Simulator validation flow are documented in
+`docs/player-controls-and-simulator.md`.
 
 ## Fixtures
 
