@@ -1,6 +1,7 @@
 import { getPlaybackProgress } from './playbackProgressApi.js';
 
 const POLL_INTERVAL_MS = 120;
+const FAILURE_TRANSITION_MS = 400;
 
 function waitForPoll(signal) {
     return new Promise((resolve) => {
@@ -14,6 +15,19 @@ function waitForPoll(signal) {
 
 function waitForFrame() {
     return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function waitForFailureTransition(signal) {
+    if (signal.aborted) return Promise.resolve();
+    return new Promise((resolve) => {
+        const finish = () => {
+            clearTimeout(timer);
+            signal.removeEventListener('abort', finish);
+            resolve();
+        };
+        const timer = setTimeout(finish, FAILURE_TRANSITION_MS);
+        signal.addEventListener('abort', finish, { once: true });
+    });
 }
 
 function progressEvent(entry) {
@@ -42,6 +56,7 @@ export function watchPlaybackProgress({
     pipelineId,
     attemptId,
     onProgress,
+    waitForFailureTransition: nextFailureTransition = waitForFailureTransition,
     waitForFrame: nextFrame = waitForFrame,
     waitForPoll: nextPoll = waitForPoll
 }) {
@@ -60,6 +75,9 @@ export function watchPlaybackProgress({
             afterSequence = entry.Sequence;
             onProgress(progressEvent(entry));
             await nextFrame();
+            if (entry.Status === 'failed') {
+                await nextFailureTransition(controller.signal);
+            }
         }
     }
 

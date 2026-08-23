@@ -18,6 +18,7 @@ export function PlayerControls({
     visible,
     onExit,
     onInteract,
+    onMenuOpenChange,
     onToggleContentFit,
     onToggleLock
 }) {
@@ -100,6 +101,7 @@ export function PlayerControls({
                     episodeMenu={episodeMenu}
                     nextEpisode={nextEpisode}
                     onInteract={onInteract}
+                    onMenuOpenChange={onMenuOpenChange}
                     playback={playback}
                     serverUrl={serverUrl}
                 />

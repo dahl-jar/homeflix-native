@@ -16,10 +16,21 @@ export function createSearchController({ delayMs = 350, run }) {
             }
             if (query === '') return;
             timer = setTimeout(() => {
+                timer = null;
                 const controller = new AbortController();
                 inFlight = controller;
                 run(query, controller.signal);
             }, delayMs);
+        },
+        dispose() {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            if (inFlight) {
+                inFlight.abort();
+                inFlight = null;
+            }
         }
     };
 }

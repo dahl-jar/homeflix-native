@@ -1,6 +1,7 @@
 import { Redirect, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
+import { PlaybackPipelineActiveArc } from '../../src/playback/pipeline/PlaybackPipelineActiveArc.js';
 import { PlaybackController } from '../../src/playback/PlaybackController.js';
 import { exitPlaybackRoute } from '../../src/playback/playerNavigation.js';
 import { restoreAppPortrait } from '../../src/playback/playerOrientation.js';
@@ -33,7 +34,8 @@ export default function PlayerRoute() {
     if (!itemState.item) {
         return (
             <View style={styles.screen}>
-                <ActivityIndicator color={colors.text} size="large" />
+                <Text style={styles.preparing}>PREPARING PLAYBACK</Text>
+                <PlaybackPipelineActiveArc size={36} />
             </View>
         );
     }
@@ -63,9 +65,17 @@ export default function PlayerRoute() {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: '#000000',
+        backgroundColor: colors.bg,
         alignItems: 'center',
         justifyContent: 'center'
+    },
+    preparing: {
+        marginBottom: 24,
+        color: colors.textDim,
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 2.1,
+        textAlign: 'center'
     },
     error: {
         color: colors.text,

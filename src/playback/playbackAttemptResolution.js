@@ -19,7 +19,19 @@ function resolvedAttempt(playbackInfo) {
         pipelineDecision,
         audioStreamIndex,
         subtitleStreamIndex,
-        sourceCount: playbackInfo.PlaybackPipelineSourceCount ?? 1
+        sourceCount: playbackInfo.PlaybackPipelineSourceCount ?? 1,
+        videoDelivery: typeof playbackInfo.PlaybackPipelineVideoDelivery === 'string'
+            ? playbackInfo.PlaybackPipelineVideoDelivery
+            : undefined,
+        audioDelivery: typeof playbackInfo.PlaybackPipelineAudioDelivery === 'string'
+            ? playbackInfo.PlaybackPipelineAudioDelivery
+            : undefined,
+        sourceWidth: Number.isFinite(playbackInfo.PlaybackPipelineSourceWidth)
+            ? playbackInfo.PlaybackPipelineSourceWidth
+            : undefined,
+        sourceHeight: Number.isFinite(playbackInfo.PlaybackPipelineSourceHeight)
+            ? playbackInfo.PlaybackPipelineSourceHeight
+            : undefined
     };
 }
 

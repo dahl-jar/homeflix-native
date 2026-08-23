@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { fetchItem } from '../api/items.js';
+import { fetchDetailItem } from '../api/items.js';
 
 import { resolvePlayableItem } from './playbackItemResolver.js';
 
@@ -9,7 +9,7 @@ export function usePlaybackItem(client, userId, itemId) {
 
     useEffect(() => {
         if (!client || !userId || !itemId) return;
-        fetchItem(client, userId, itemId)
+        fetchDetailItem(client, userId, itemId)
             .then((item) => resolvePlayableItem(client, userId, item))
             .then((item) => setState({ itemId, item, failed: false }))
             .catch(() => setState({ itemId, item: null, failed: true }));

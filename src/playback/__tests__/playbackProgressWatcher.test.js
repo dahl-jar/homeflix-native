@@ -44,7 +44,11 @@ test('should replay failure before the next dynamic candidate stage', async () =
         client,
         pipelineId: 'pipeline-one',
         attemptId: 'pipeline-one-a1',
-        onProgress: (event) => events.push(event),
+        onProgress: (event) => events.push({
+            status: event.status,
+            sourceAttempt: event.sourceAttempt
+        }),
+        waitForFailureTransition: async () => events.push('failure-hold'),
         waitForFrame: async () => frames.push('frame'),
         waitForPoll: () => new Promise((resolve) => setTimeout(resolve, 0))
     });
@@ -56,9 +60,10 @@ test('should replay failure before the next dynamic candidate stage', async () =
     }
     await watcher.stop();
 
-    assert.deepEqual(events.map(({ status, sourceAttempt }) => ({ status, sourceAttempt })), [
+    assert.deepEqual(events, [
         { status: 'active', sourceAttempt: 1 },
         { status: 'failed', sourceAttempt: 1 },
+        'failure-hold',
         { status: 'active', sourceAttempt: 2 }
     ]);
     assert.equal(frames.length, 3);

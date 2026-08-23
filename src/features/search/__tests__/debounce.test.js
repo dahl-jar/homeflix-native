@@ -46,3 +46,31 @@ test('should cancel in-flight search when query changes', () => {
     assert.equal(signals[1].signal.aborted, false);
     mock.timers.reset();
 });
+
+test('should clear a pending search when disposed', (context) => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    context.after(() => mock.timers.reset());
+    const runs = [];
+    const controller = createSearchController({ run: async (query) => runs.push(query) });
+
+    controller.onQuery('matrix');
+    controller.dispose();
+    mock.timers.tick(400);
+
+    assert.deepEqual(runs, []);
+});
+
+test('should abort an active search when disposed', (context) => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    context.after(() => mock.timers.reset());
+    const signals = [];
+    const controller = createSearchController({
+        run: (_query, signal) => new Promise(() => signals.push(signal))
+    });
+
+    controller.onQuery('matrix');
+    mock.timers.tick(400);
+    controller.dispose();
+
+    assert.equal(signals[0].aborted, true);
+});

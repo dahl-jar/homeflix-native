@@ -5,6 +5,7 @@ import { FlatList, ScrollView, Pressable, Text, View, StyleSheet, useWindowDimen
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { fetchLibraryPage, fetchFilterOptions, fetchItem } from '../../../src/api/items.js';
+import { createPager } from '../../../src/api/paging.js';
 import { DropdownPill } from '../../../src/components/DropdownPill.js';
 import { GridPosterCard } from '../../../src/components/GridPosterCard.js';
 import { ScreenBackground } from '../../../src/components/ScreenBackground.js';
@@ -15,7 +16,6 @@ import {
     buildLibraryQuery,
     decadesFromYears
 } from '../../../src/features/library/filters.js';
-import { createPager } from '../../../src/features/library/paging.js';
 import { useSession } from '../../../src/session/SessionProvider.js';
 import { colors, spacing } from '../../../src/theme/tokens.js';
 

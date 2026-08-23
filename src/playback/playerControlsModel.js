@@ -21,3 +21,7 @@ export function seekPositionFromPress(locationX, width, durationSeconds) {
 export function nextVideoContentFit(contentFit) {
     return contentFit === 'cover' ? 'contain' : 'cover';
 }
+
+export function shouldScheduleAutoHide({ playbackStatus, hidden, pinned }) {
+    return playbackStatus === 'playing' && !hidden && !pinned;
+}

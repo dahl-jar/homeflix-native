@@ -22,7 +22,7 @@ export function DetailView({ data, onBack, serverUrl, width }) {
             <DetailHero item={data.item} onBack={onBack} serverUrl={serverUrl} width={width} />
             <View style={styles.body}>
                 <DetailChips item={data.item} />
-                <DetailActions item={data.item} sources={data.sources} />
+                <DetailActions item={data.item} />
                 <DetailDescription item={data.item} />
                 <EpisodeSection
                     episodes={data.episodes}

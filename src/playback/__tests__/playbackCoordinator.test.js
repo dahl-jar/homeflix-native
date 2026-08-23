@@ -42,6 +42,10 @@ function resolved(sourceFields = {}) {
         PlaybackPipelineAudioStreamIndex: 4,
         PlaybackPipelineSubtitleStreamIndex: 7,
         PlaybackPipelineSourceCount: 3,
+        PlaybackPipelineVideoDelivery: 'copy',
+        PlaybackPipelineAudioDelivery: 'encode',
+        PlaybackPipelineSourceWidth: 3840,
+        PlaybackPipelineSourceHeight: 2160,
         MediaSources: [source(sourceFields)]
     };
 }
@@ -78,6 +82,10 @@ test('should release exactly the source and tracks resolved by the server', asyn
     assert.equal(result.context.subtitleStreamIndex, 7);
     assert.equal(result.context.playSessionId, 'session-one');
     assert.equal(result.context.playMethod, 'Transcode');
+    assert.equal(result.context.videoDelivery, 'copy');
+    assert.equal(result.context.audioDelivery, 'encode');
+    assert.equal(result.context.sourceWidth, 3840);
+    assert.equal(result.context.sourceHeight, 2160);
     assert.equal(result.video.source.contentType, 'hls');
     assert.equal(result.startSeconds, 2);
     assert.deepEqual(result.attemptedSourceIds, ['source-two']);
@@ -93,8 +101,8 @@ test('should release exactly the source and tracks resolved by the server', asyn
     assert.equal(release.PlaybackPipelineHandle, 'signed-handle');
     assert.equal(release.EnableDirectPlay, false);
     assert.equal(release.EnableDirectStream, false);
-    assert.equal(release.AllowVideoStreamCopy, false);
-    assert.equal(release.AllowAudioStreamCopy, false);
+    assert.equal(release.AllowVideoStreamCopy, true);
+    assert.equal(release.AllowAudioStreamCopy, true);
     assert.doesNotMatch(JSON.stringify(result.context), /secret|videos|m3u8/);
     assert.deepEqual(progressEvents, [
         'resolution_started',
@@ -103,6 +111,15 @@ test('should release exactly the source and tracks resolved by the server', asyn
         'stage_progress',
         'release_completed'
     ]);
+    await result.telemetry.flush();
+    const acceptedEvent = client.calls.find(({ path, body }) =>
+        path === '/ClientLog/PlaybackPipeline' && body.event === 'source_accepted'
+    ).body;
+    assert.equal(acceptedEvent.videoDelivery, 'copy');
+    assert.equal(acceptedEvent.audioDelivery, 'encode');
+    assert.equal(acceptedEvent.sourceWidth, 3840);
+    assert.equal(acceptedEvent.sourceHeight, 2160);
+    assert.doesNotMatch(JSON.stringify(acceptedEvent), /secret|videos|m3u8/);
 });
 
 test('should forward player-rejected and preferred sources to the server', async () => {

@@ -1,3 +1,5 @@
+const DETAIL_SEASON_FIELDS = 'ItemCounts,PrimaryImageAspectRatio,CanDelete';
+
 export function fetchUserViews(client, userId) {
     return client.get('/UserViews', { userId });
 }
@@ -56,26 +58,39 @@ export function fetchFilterOptions(client, userId, parentId) {
         .then((result) => ({ genres: result.Genres ?? [], years: result.Years ?? [] }));
 }
 
-export function searchItems(client, userId, term, limit = 40) {
-    return client.get('/Items', {
-        userId,
-        searchTerm: term,
-        recursive: true,
-        includeItemTypes: 'Movie,Series',
-        limit
-    });
+export function searchItems(
+    client,
+    userId,
+    { term, startIndex = 0, limit = 40, localOnly = false, signal }
+) {
+    return client.get(
+        '/Items',
+        {
+            userId,
+            searchTerm: localOnly ? `local:${term}` : term,
+            recursive: true,
+            includeItemTypes: 'Movie,Series',
+            startIndex,
+            limit
+        },
+        { signal }
+    );
 }
 
 export function fetchSimilar(client, userId, itemId, limit = 12) {
     return client.get(`/Items/${itemId}/Similar`, { userId, limit });
 }
 
-export function fetchSources(client, userId, itemId) {
-    return client.post(`/Items/${itemId}/PlaybackInfo?userId=${userId}&IsPlayback=false`, {});
-}
-
 export function fetchItem(client, userId, itemId) {
     return client.get(`/Users/${userId}/Items/${itemId}`);
+}
+
+export function fetchDetailItem(client, userId, itemId) {
+    return client.get(`/Users/${userId}/Items/${itemId}`, {
+        includeMediaSources: false,
+        includeMediaStreams: false,
+        waitForSeriesTree: false
+    });
 }
 
 export function fetchItemsByIds(client, userId, itemIds) {
@@ -92,7 +107,10 @@ export function fetchItemsByIds(client, userId, itemIds) {
 }
 
 export function fetchSeasons(client, userId, seriesId) {
-    return client.get(`/Shows/${seriesId}/Seasons`, { userId });
+    return client.get(`/Shows/${seriesId}/Seasons`, {
+        userId,
+        fields: DETAIL_SEASON_FIELDS
+    });
 }
 
 export function fetchEpisodes(client, userId, seriesId, seasonId) {

@@ -51,3 +51,27 @@ test('should activate playback after a previous start failure', async () => {
 
     assert.deepEqual(events, ['failed:start', 'next:start']);
 });
+
+test('should cancel deferred cleanup when the same runtime reactivates', async () => {
+    const events = [];
+    const registry = createPlaybackRuntimeRegistry();
+    const runtime = fakeRuntime('runtime', events);
+
+    await registry.activate(runtime);
+    const cleanup = registry.scheduleDeactivate(runtime);
+    await registry.activate(runtime);
+    await cleanup;
+
+    assert.deepEqual(events, ['runtime:start']);
+});
+
+test('should stop immediately for explicit deactivation', async () => {
+    const events = [];
+    const registry = createPlaybackRuntimeRegistry();
+    const runtime = fakeRuntime('runtime', events);
+
+    await registry.activate(runtime);
+    await registry.deactivate(runtime);
+
+    assert.deepEqual(events, ['runtime:start', 'runtime:stop']);
+});

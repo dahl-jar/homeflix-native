@@ -31,7 +31,9 @@ const TEXT_LIMITS = {
     container: 64,
     protocol: 64,
     playbackMode: 64,
-    recoveryAction: 64
+    recoveryAction: 64,
+    videoDelivery: 16,
+    audioDelivery: 16
 };
 
 const NUMBER_FIELDS = new Set([
@@ -50,6 +52,8 @@ const NUMBER_FIELDS = new Set([
     'videoDuration',
     'videoWidth',
     'videoHeight',
+    'sourceWidth',
+    'sourceHeight',
     'videoPlaybackRate',
     'bufferedRangeCount',
     'bufferedStart',

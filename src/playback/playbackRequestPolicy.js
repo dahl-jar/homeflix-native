@@ -10,17 +10,17 @@ const IOS_DISCOVERY_POLICY = {
     enableDirectStream: false
 };
 
-const IOS_TRANSCODE_POLICY = {
+const IOS_HLS_POLICY = {
     enableDirectPlay: false,
     enableDirectStream: false,
-    allowVideoStreamCopy: false,
-    allowAudioStreamCopy: false
+    allowVideoStreamCopy: true,
+    allowAudioStreamCopy: true
 };
 
 export function createPlaybackRequestPolicy(platform, mediaSource = null) {
     if (platform === 'android') return DEFAULT_POLICY;
     if (platform !== 'ios') throw new Error(`unsupported playback platform: ${platform}`);
     return mediaSource?.SupportsDirectPlay === false
-        ? IOS_TRANSCODE_POLICY
+        ? IOS_HLS_POLICY
         : IOS_DISCOVERY_POLICY;
 }

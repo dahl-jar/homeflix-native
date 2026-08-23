@@ -47,7 +47,11 @@ function reporterContext(options) {
         attemptId: options.attempt.attemptId,
         playMethod: options.playMethod,
         audioStreamIndex: options.tracks.audioStreamIndex,
-        subtitleStreamIndex: options.tracks.subtitleStreamIndex
+        subtitleStreamIndex: options.tracks.subtitleStreamIndex,
+        videoDelivery: options.videoDelivery,
+        audioDelivery: options.audioDelivery,
+        sourceWidth: options.sourceWidth,
+        sourceHeight: options.sourceHeight
     };
 }
 
@@ -101,11 +105,19 @@ async function resolveAndRelease(options, pipeline, telemetry) {
         ...options,
         attempt: selectedAttempt,
         pipeline,
+        videoDelivery: resolution.videoDelivery,
+        audioDelivery: resolution.audioDelivery,
+        sourceWidth: resolution.sourceWidth,
+        sourceHeight: resolution.sourceHeight,
         ...released
     });
     telemetry.log('source_accepted', {
         playMethod: released.playMethod,
-        selectionReason: 'server_resolved_source'
+        selectionReason: 'server_resolved_source',
+        videoDelivery: resolution.videoDelivery,
+        audioDelivery: resolution.audioDelivery,
+        sourceWidth: resolution.sourceWidth,
+        sourceHeight: resolution.sourceHeight
     });
     return {
         video: released.video,

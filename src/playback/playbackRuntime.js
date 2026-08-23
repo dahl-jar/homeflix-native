@@ -25,6 +25,7 @@ export function createPlaybackRuntime({
     let binding = null;
     let closed = false;
     let recovering = false;
+    let pendingRecoveryError = null;
     const rejectedSourceIds = new Set(negotiationOptions.excludedSourceIds ?? []);
     let snapshot = {
         status: 'idle',
@@ -121,12 +122,10 @@ export function createPlaybackRuntime({
         }
     }
 
-    async function recover(error) {
-        if (closed || recovering || !accepted || !binding) return;
-        recovering = true;
+    async function rejectAccepted(error) {
         rejectedSourceIds.add(accepted.context.mediaSourceId);
         log('player_failed', error);
-        const reason = error.errorMessage ?? 'player failed';
+        const reason = error?.errorMessage ?? error?.message ?? 'player failed';
         const resumeTicks = playbackReportSnapshot(binding, true).positionTicks;
         advancePipeline({ type: 'failed', reason });
         update({ status: 'recovering', reason });
@@ -134,15 +133,48 @@ export function createPlaybackRuntime({
         binding.dispose();
         binding = null;
         advancePipeline({ type: 'retry' });
+        return resumeTicks;
+    }
+
+    function failPlayback() {
+        advancePipeline({ type: 'failed', reason: 'no compatible playback source' });
+        update({ status: 'failed', reason: 'no compatible playback source' });
+        log('playback_failed', { reason: 'no_compatible_source' });
+    }
+
+    async function recoverNextSource(error) {
+        const resumeTicks = await rejectAccepted(error);
+        let next;
+        try {
+            next = await negotiateNext(resumeTicks);
+        } catch {
+            failPlayback();
+            return false;
+        }
 
         try {
-            await loadAccepted(await negotiateNext(resumeTicks));
-        } catch {
-            advancePipeline({ type: 'failed', reason: 'no compatible playback source' });
-            update({ status: 'failed', reason: 'no compatible playback source' });
-            log('playback_failed', { reason: 'no_compatible_source' });
+            await loadAccepted(next);
+        } catch (loadError) {
+            pendingRecoveryError = loadError;
+        }
+        return true;
+    }
+
+    async function recover(error) {
+        if (closed || !accepted || !binding) return;
+        pendingRecoveryError = error;
+        if (recovering) return;
+        recovering = true;
+
+        try {
+            while (!closed && pendingRecoveryError) {
+                const currentError = pendingRecoveryError;
+                pendingRecoveryError = null;
+                if (!await recoverNextSource(currentError)) return;
+            }
         } finally {
             recovering = false;
+            if (!closed && pendingRecoveryError) void recover(pendingRecoveryError);
         }
     }
 

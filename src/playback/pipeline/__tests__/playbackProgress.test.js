@@ -106,6 +106,28 @@ test('should reset dynamic stages for a source retry', () => {
     assert.deepEqual(retry.stages, []);
 });
 
+test('should display cumulative source attempts across server retries', () => {
+    let progress = transitionPlaybackProgress(
+        createPlaybackProgress(),
+        stage('analysis', 'Analyzing source', 20, 'active', { sourceAttempt: 1 })
+    );
+    progress = transitionPlaybackProgress(progress, { type: 'retry' });
+    progress = transitionPlaybackProgress(progress, { type: 'resolution_started' });
+    progress = transitionPlaybackProgress(
+        progress,
+        stage('analysis', 'Analyzing source', 20, 'active', { sourceAttempt: 1 })
+    );
+    progress = transitionPlaybackProgress(progress, { type: 'retry' });
+    progress = transitionPlaybackProgress(progress, { type: 'resolution_started' });
+    progress = transitionPlaybackProgress(
+        progress,
+        stage('analysis', 'Analyzing source', 20, 'active', { sourceAttempt: 1 })
+    );
+
+    assert.equal(progress.attempt, 3);
+    assert.equal(progress.sourceAttempt, 3);
+});
+
 test('should retain a terminal failure without inventing a stage', () => {
     const failed = transitionPlaybackProgress(
         createPlaybackProgress(),

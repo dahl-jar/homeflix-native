@@ -268,6 +268,52 @@ test('should reject a native player failure before requesting another server att
     await runtime.stop();
 });
 
+test('should continue to source three when source two fails during recovery', async () => {
+    const events = [];
+    const player = fakePlayer();
+    const sources = Array.from({ length: 10 }, (_, index) => `source-${index + 1}`);
+    const negotiationCalls = [];
+    let resolveSourceThree;
+    const sourceThreeLoaded = new Promise((resolve) => {
+        resolveSourceThree = resolve;
+    });
+    player.replaceAsync = async function replaceAsync(source) {
+        this.source = source;
+        if (source.uri.endsWith('/source-2.m3u8')) {
+            this.listeners.get('statusChange')({
+                status: 'error',
+                error: new Error('source two failed')
+            });
+        }
+        if (source.uri.endsWith('/source-3.m3u8')) resolveSourceThree();
+    };
+    const runtime = createPlaybackRuntime({
+        negotiationOptions: { startTimeTicks: 0 },
+        async negotiate(options) {
+            negotiationCalls.push(options);
+            return acceptedSession(events, sources[negotiationCalls.length - 1]);
+        },
+        onSnapshot: () => {},
+        player
+    });
+
+    await runtime.start();
+    player.listeners.get('statusChange')({
+        status: 'error',
+        error: new Error('source one failed')
+    });
+    await waitFor(sourceThreeLoaded);
+
+    assert.equal(negotiationCalls.length, 3);
+    assert.deepEqual(
+        [...negotiationCalls[2].excludedSourceIds],
+        ['source-1', 'source-2']
+    );
+    assert.equal(player.source.uri, 'http://server/source-3.m3u8');
+    assert.equal(negotiationCalls.some((_, index) => index > 2), false);
+    await runtime.stop();
+});
+
 test('should ignore a source resolved after runtime stop', async () => {
     const player = fakePlayer();
     let resolveNegotiation;

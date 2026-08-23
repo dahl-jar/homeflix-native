@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import {
     formatPlaybackTime,
     nextVideoContentFit,
-    seekPositionFromPress
+    seekPositionFromPress,
+    shouldScheduleAutoHide
 } from '../playerControlsModel.js';
 
 test('should format player time without leaking invalid values', () => {
@@ -24,4 +25,20 @@ test('should convert a timeline press into a bounded seek position', () => {
 test('should toggle between fitting and filling the player surface', () => {
     assert.equal(nextVideoContentFit('contain'), 'cover');
     assert.equal(nextVideoContentFit('cover'), 'contain');
+});
+
+test('should schedule auto-hide while playing, visible, and unpinned', () => {
+    assert.equal(shouldScheduleAutoHide({ playbackStatus: 'playing', hidden: false, pinned: false }), true);
+});
+
+test('should not schedule auto-hide while a picker pins the controls', () => {
+    assert.equal(shouldScheduleAutoHide({ playbackStatus: 'playing', hidden: false, pinned: true }), false);
+});
+
+test('should not schedule auto-hide when not playing', () => {
+    assert.equal(shouldScheduleAutoHide({ playbackStatus: 'paused', hidden: false, pinned: false }), false);
+});
+
+test('should not schedule auto-hide when controls are already hidden', () => {
+    assert.equal(shouldScheduleAutoHide({ playbackStatus: 'playing', hidden: true, pinned: false }), false);
 });

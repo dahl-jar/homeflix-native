@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { shouldScheduleAutoHide } from './playerControlsModel.js';
+
 const AUTO_HIDE_DELAY_MS = 3_500;
 
 export function usePlayerControlsVisibility(playbackStatus) {
     const [visibility, setVisibility] = useState({ hidden: false, revision: 0 });
+    const [pinned, setPinned] = useState(false);
     const timerRef = useRef(null);
 
     const clearTimer = useCallback(() => {
@@ -18,12 +21,12 @@ export function usePlayerControlsVisibility(playbackStatus) {
 
     useEffect(() => {
         clearTimer();
-        if (playbackStatus !== 'playing' || visibility.hidden) return undefined;
+        if (!shouldScheduleAutoHide({ playbackStatus, hidden: visibility.hidden, pinned })) return undefined;
         timerRef.current = setTimeout(() => {
             setVisibility((current) => ({ ...current, hidden: true }));
         }, AUTO_HIDE_DELAY_MS);
         return clearTimer;
-    }, [clearTimer, playbackStatus, visibility.hidden, visibility.revision]);
+    }, [clearTimer, pinned, playbackStatus, visibility.hidden, visibility.revision]);
 
     const visible = playbackStatus !== 'playing' || !visibility.hidden;
 
@@ -36,5 +39,5 @@ export function usePlayerControlsVisibility(playbackStatus) {
         }
     }, [clearTimer, show, visible]);
 
-    return { show, toggle, visible };
+    return { setPinned, show, toggle, visible };
 }

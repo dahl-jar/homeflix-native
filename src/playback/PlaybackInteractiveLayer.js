@@ -35,6 +35,7 @@ export function PlaybackInteractiveLayer({
                 nextEpisode={nextEpisode}
                 onExit={onExit}
                 onInteract={controls.show}
+                onMenuOpenChange={controls.setPinned}
                 onToggleContentFit={onToggleContentFit}
                 onToggleLock={onToggleLock}
                 playback={playback}

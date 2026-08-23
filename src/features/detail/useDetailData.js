@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 
 import {
     fetchEpisodes,
-    fetchItem,
+    fetchDetailItem,
     fetchSeasons,
-    fetchSimilar,
-    fetchSources
+    fetchSimilar
 } from '../../api/items.js';
 
 import { defaultSeasonIndex } from './seasons.js';
@@ -13,21 +12,17 @@ import { defaultSeasonIndex } from './seasons.js';
 export function useDetailData({ client, itemId, userId }) {
     const [itemState, setItemState] = useState({ itemId: null, value: null });
     const [similarState, setSimilarState] = useState({ itemId: null, items: [] });
-    const [sourceState, setSourceState] = useState({ itemId: null, items: [] });
     const [seasonState, setSeasonState] = useState({ itemId: null, items: [], selectedIndex: 0 });
     const [episodeState, setEpisodeState] = useState({ seasonId: null, items: [] });
 
     useEffect(() => {
         if (!client || !userId || !itemId) return;
-        fetchItem(client, userId, itemId)
+        fetchDetailItem(client, userId, itemId)
             .then((value) => setItemState({ itemId, value }))
             .catch(() => setItemState({ itemId, value: null }));
         fetchSimilar(client, userId, itemId)
             .then((result) => setSimilarState({ itemId, items: result.Items }))
             .catch(() => setSimilarState({ itemId, items: [] }));
-        fetchSources(client, userId, itemId)
-            .then((result) => setSourceState({ itemId, items: result.MediaSources ?? [] }))
-            .catch(() => setSourceState({ itemId, items: [] }));
     }, [client, itemId, userId]);
 
     const item = itemState.itemId === itemId ? itemState.value : null;
@@ -63,7 +58,6 @@ export function useDetailData({ client, itemId, userId }) {
     return {
         item,
         similar: similarState.itemId === itemId ? similarState.items : [],
-        sources: sourceState.itemId === itemId ? sourceState.items : [],
         seasons,
         seasonIndex,
         selectSeason,

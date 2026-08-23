@@ -12,15 +12,15 @@ test('should discover iOS sources without progressive direct stream', () => {
     });
 });
 
-test('should force non-direct-play iOS sources through encoded HLS', () => {
+test('should keep stream copy available for non-direct-play iOS HLS', () => {
     assert.deepEqual(createPlaybackRequestPolicy('ios', {
         IsRemote: false,
         SupportsDirectPlay: false
     }), {
         enableDirectPlay: false,
         enableDirectStream: false,
-        allowVideoStreamCopy: false,
-        allowAudioStreamCopy: false
+        allowVideoStreamCopy: true,
+        allowAudioStreamCopy: true
     });
 });
 

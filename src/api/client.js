@@ -42,8 +42,8 @@ export function createClient({ baseUrl, token, fetchFn = fetch }) {
 
     return {
         baseUrl,
-        async get(path, params) {
-            const response = await fetchFn(buildUrl(path, params), { headers });
+        async get(path, params, { signal } = {}) {
+            const response = await fetchFn(buildUrl(path, params), { headers, signal });
             return parse(response, path);
         },
         async getText(path, params) {

@@ -1,8 +1,9 @@
 const STAGE_STATUSES = new Set(['pending', 'active', 'complete', 'failed']);
 
-export function createPlaybackProgress(attempt = 1) {
+export function createPlaybackProgress(attempt = 1, sourceOffset = 0) {
     return {
         attempt,
+        sourceOffset,
         sourceAttempt: null,
         visible: true,
         videoVisible: false,
@@ -42,7 +43,9 @@ function applyStageProgress(progress, event) {
         : [...progress.stages, nextStage];
     return {
         ...progress,
-        sourceAttempt: event.sourceAttempt ?? progress.sourceAttempt,
+        sourceAttempt: Number.isFinite(event.sourceAttempt)
+            ? progress.sourceOffset + event.sourceAttempt
+            : progress.sourceAttempt,
         sourceCount: event.sourceCount ?? progress.sourceCount,
         reason: event.status === 'failed' ? event.reason ?? 'source failed' : null,
         stages: orderedStages(stages)
@@ -50,7 +53,7 @@ function applyStageProgress(progress, event) {
 }
 
 function startResolution(progress) {
-    return createPlaybackProgress(progress.attempt);
+    return createPlaybackProgress(progress.attempt, progress.sourceOffset);
 }
 
 function completeResolution(progress, event) {
@@ -75,7 +78,10 @@ function completePlayback(progress) {
 }
 
 function retryPlayback(progress) {
-    return createPlaybackProgress(progress.attempt + 1);
+    return createPlaybackProgress(
+        progress.attempt + 1,
+        progress.sourceAttempt ?? progress.sourceOffset
+    );
 }
 
 function failPlayback(progress, event) {

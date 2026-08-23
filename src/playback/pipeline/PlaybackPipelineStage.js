@@ -1,15 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '../../theme/tokens.js';
 
-import { PlaybackPipelineActiveHalo } from './PlaybackPipelineActiveHalo.js';
+import { PlaybackPipelineActiveArc } from './PlaybackPipelineActiveArc.js';
+import { useReduceMotion } from './useReduceMotion.js';
+
+const ENTER_MS = 260;
+const ENTER_SCALE_FROM = 0.9;
+const MARKER_SIZE = 28;
+const CONNECTOR_GAP = 6;
+const SWEEP_MS = 1400;
+const SWEEP_WIDTH = 28;
+const SWEEP_COLORS = [
+    'rgba(255, 255, 255, 0)',
+    'rgba(255, 255, 255, 0.75)',
+    'rgba(255, 255, 255, 0)'
+];
 
 function StageMarker({ status }) {
     if (status === 'active') {
         return (
             <>
-                <PlaybackPipelineActiveHalo />
+                <PlaybackPipelineActiveArc style={styles.arc} />
                 <View style={styles.activeDot} />
             </>
         );
@@ -23,20 +38,99 @@ function StageMarker({ status }) {
     return <View style={styles.pendingDot} />;
 }
 
-export function PlaybackPipelineStage({ isLast, stage, width }) {
+function ConnectorSweep({ width }) {
+    const [travel] = useState(() => new Animated.Value(0));
+    const reduceMotion = useReduceMotion();
+
+    useEffect(() => {
+        if (reduceMotion) {
+            travel.stopAnimation();
+            travel.setValue(0);
+            return undefined;
+        }
+        const sweep = Animated.loop(Animated.timing(travel, {
+            duration: SWEEP_MS,
+            easing: Easing.inOut(Easing.quad),
+            toValue: 1,
+            useNativeDriver: true
+        }));
+        sweep.start();
+        return () => sweep.stop();
+    }, [reduceMotion, travel]);
+
+    if (reduceMotion) return null;
+    return (
+        <View pointerEvents="none" style={styles.sweepTrack}>
+            <Animated.View style={{
+                transform: [{
+                    translateX: travel.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-SWEEP_WIDTH, width]
+                    })
+                }]
+            }}>
+                <LinearGradient
+                    colors={SWEEP_COLORS}
+                    end={{ x: 1, y: 0 }}
+                    start={{ x: 0, y: 0 }}
+                    style={styles.sweepLight}
+                />
+            </Animated.View>
+        </View>
+    );
+}
+
+export function PlaybackPipelineStage({ isLast, nextStatus, stage, width }) {
     const active = stage.status === 'active';
     const complete = stage.status === 'complete';
     const failed = stage.status === 'failed';
+    const [enter] = useState(() => new Animated.Value(0));
+    const reduceMotion = useReduceMotion();
+    const connectorLength = Math.max(0, width - MARKER_SIZE - CONNECTOR_GAP * 2);
+
+    useEffect(() => {
+        if (reduceMotion) {
+            enter.setValue(1);
+            return undefined;
+        }
+        const appear = Animated.timing(enter, {
+            duration: ENTER_MS,
+            easing: Easing.out(Easing.quad),
+            toValue: 1,
+            useNativeDriver: true
+        });
+        appear.start();
+        return () => appear.stop();
+    }, [enter, reduceMotion]);
+
     return (
-        <View
+        <Animated.View
             accessibilityLabel={`${stage.label}: ${stage.status}`}
-            style={[styles.stage, { width }]}
+            style={[
+                styles.stage,
+                { width },
+                {
+                    opacity: enter,
+                    transform: [{
+                        scale: enter.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [ENTER_SCALE_FROM, 1]
+                        })
+                    }]
+                }
+            ]}
         >
             {!isLast ? (
                 <View style={[
                     styles.connector,
+                    {
+                        left: width / 2 + MARKER_SIZE / 2 + CONNECTOR_GAP,
+                        width: connectorLength
+                    },
                     complete && styles.connectorSettled
-                ]} />
+                ]}>
+                    {nextStatus === 'active' ? <ConnectorSweep width={connectorLength} /> : null}
+                </View>
             ) : null}
             <View style={[
                 styles.marker,
@@ -56,7 +150,7 @@ export function PlaybackPipelineStage({ isLast, stage, width }) {
             >
                 {stage.label}
             </Text>
-        </View>
+        </Animated.View>
     );
 }
 
@@ -68,13 +162,24 @@ const styles = StyleSheet.create({
     connector: {
         position: 'absolute',
         top: 13,
-        left: '50%',
-        width: '100%',
         height: 2,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        borderRadius: 1,
+        overflow: 'hidden',
+        backgroundColor: 'rgba(255, 255, 255, 0.16)'
     },
     connectorSettled: {
-        backgroundColor: colors.success
+        backgroundColor: 'rgba(255, 255, 255, 0.35)'
+    },
+    sweepTrack: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%'
+    },
+    sweepLight: {
+        width: SWEEP_WIDTH,
+        height: 2
     },
     marker: {
         width: 28,
@@ -82,21 +187,23 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(20, 18, 19, 0.88)',
+        backgroundColor: 'rgb(20, 18, 19)',
         borderColor: 'rgba(255, 255, 255, 0.3)',
         borderWidth: 2
     },
     markerActive: {
-        borderColor: colors.accent,
-        backgroundColor: colors.accent
+        borderColor: 'transparent'
     },
     markerComplete: {
-        borderColor: colors.success,
-        backgroundColor: colors.success
+        borderColor: colors.glassBorder,
+        backgroundColor: colors.bgRaised
     },
     markerFailed: {
         borderColor: colors.danger,
         backgroundColor: colors.danger
+    },
+    arc: {
+        position: 'absolute'
     },
     pendingDot: {
         width: 6,

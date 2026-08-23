@@ -52,3 +52,23 @@ test('should normalize control characters and server field limits', () => {
     assert.equal(fields.sourceName.length, 512);
     assert.doesNotMatch(fields.itemName, /[\n\t]/);
 });
+
+test('should retain bounded delivery fields without source locations', () => {
+    const fields = sanitizeTelemetryFields({
+        event: 'source_accepted',
+        videoDelivery: 'copy',
+        audioDelivery: 'encode',
+        sourceWidth: 3840,
+        sourceHeight: 2160,
+        videoUrl: 'https://provider.example/video?token=secret',
+        path: '/provider/secret'
+    });
+
+    assert.deepEqual(fields, {
+        event: 'source_accepted',
+        videoDelivery: 'copy',
+        audioDelivery: 'encode',
+        sourceWidth: 3840,
+        sourceHeight: 2160
+    });
+});

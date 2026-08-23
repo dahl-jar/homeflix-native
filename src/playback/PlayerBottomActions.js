@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { PickerOverlay } from '../components/PickerOverlay.js';
@@ -7,10 +7,14 @@ import { EpisodePickerOverlay } from './EpisodePickerOverlay.js';
 import { PlayerActionButton } from './PlayerActionButton.js';
 import { audioTrackEntries, selectedTrackKey, subtitleTrackEntries } from './playerTrackMenu.js';
 
-export function PlayerBottomActions({ episodeMenu, nextEpisode, onInteract, playback, serverUrl }) {
+export function PlayerBottomActions({ episodeMenu, nextEpisode, onInteract, onMenuOpenChange, playback, serverUrl }) {
     const [menu, setMenu] = useState(null);
     const audioTracks = useMemo(() => audioTrackEntries(playback.snapshot), [playback.snapshot]);
     const subtitleTracks = useMemo(() => subtitleTrackEntries(playback.snapshot), [playback.snapshot]);
+    useEffect(() => {
+        onMenuOpenChange(menu !== null);
+        return () => onMenuOpenChange(false);
+    }, [menu, onMenuOpenChange]);
     const open = (nextMenu) => {
         onInteract();
         setMenu(nextMenu);

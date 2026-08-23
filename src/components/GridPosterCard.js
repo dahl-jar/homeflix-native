@@ -4,8 +4,9 @@ import { MediaPosterCard } from './MediaPosterCard.js';
 
 const GRID_IMAGE_WIDTH = 300;
 
-export function GridPosterCard({ item, serverUrl, width, showTitle = false }) {
+export function GridPosterCard({ item, serverUrl, width, showTitle = false, onPress }) {
     const router = useRouter();
+    const handlePress = onPress ?? (() => router.push(`/details/${item.Id}`));
 
     return (
         <MediaPosterCard
@@ -14,7 +15,7 @@ export function GridPosterCard({ item, serverUrl, width, showTitle = false }) {
             imageWidth={GRID_IMAGE_WIDTH}
             width={width}
             showTitle={showTitle}
-            onPress={() => router.push(`/details/${item.Id}`)}
+            onPress={handlePress}
         />
     );
 }

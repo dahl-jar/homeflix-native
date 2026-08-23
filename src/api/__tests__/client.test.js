@@ -131,3 +131,20 @@ test('should fetch authenticated text without JSON parsing', async () => {
 
     assert.equal(await client.getText('/Videos/item/source/Subtitles/2/0/Stream.srt'), 'subtitle text');
 });
+
+test('should forward an abort signal on get requests', async () => {
+    const seen = [];
+    const controller = new AbortController();
+    const client = createClient({
+        baseUrl: 'http://server',
+        token: 'token-one',
+        fetchFn: async (_url, options) => {
+            seen.push(options);
+            return okResponse({});
+        }
+    });
+
+    await client.get('/Items', undefined, { signal: controller.signal });
+
+    assert.equal(seen[0].signal, controller.signal);
+});

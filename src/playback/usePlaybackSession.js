@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { createPlaybackProgress } from './pipeline/playbackProgress.js';
 import { createPlaybackRuntime } from './playbackRuntime.js';
+import { createPlaybackRuntimeLease } from './playbackRuntimeLease.js';
 import { playbackRuntimeRegistry } from './playbackRuntimeRegistry.js';
 
 const INITIAL_SNAPSHOT = {
@@ -18,28 +19,35 @@ const INITIAL_SNAPSHOT = {
     reason: null
 };
 
-export function usePlaybackSession({
-    active = true,
-    client,
-    item,
-    platform,
-    preferredMediaSourceId,
-    serverUrl,
-    startTimeTicks,
-    userId
-}) {
+export function usePlaybackSession(options) {
+    const {
+        active = true,
+        client,
+        item,
+        platform,
+        preferredMediaSourceId,
+        serverUrl,
+        startTimeTicks,
+        userId
+    } = options;
     const player = useVideoPlayer(null, (instance) => {
         instance.staysActiveInBackground = false;
         instance.showNowPlayingNotification = false;
         instance.allowsExternalPlayback = true;
     });
     const runtimeRef = useRef(null);
+    const leaseRef = useRef(null);
     const [snapshot, setSnapshot] = useState(INITIAL_SNAPSHOT);
+    if (leaseRef.current == null) {
+        leaseRef.current = createPlaybackRuntimeLease({
+            createRuntime: createPlaybackRuntime,
+            registry: playbackRuntimeRegistry
+        });
+    }
 
     useEffect(() => {
         if (!active) return undefined;
-        let mounted = true;
-        const runtime = createPlaybackRuntime({
+        const runtime = leaseRef.current.acquire({
             player,
             negotiationOptions: {
                 client,
@@ -49,18 +57,13 @@ export function usePlaybackSession({
                 serverUrl,
                 startTimeTicks,
                 userId
-            },
-            onSnapshot: (next) => {
-                if (mounted) setSnapshot(next);
             }
-        });
+        }, setSnapshot, createPlaybackRuntime);
         runtimeRef.current = runtime;
-        void playbackRuntimeRegistry.activate(runtime).catch(() => {});
 
         return () => {
-            mounted = false;
             if (runtimeRef.current === runtime) runtimeRef.current = null;
-            void playbackRuntimeRegistry.deactivate(runtime);
+            void leaseRef.current.release(runtime);
         };
     }, [
         active,
@@ -85,7 +88,7 @@ export function usePlaybackSession({
         selectSubtitleTrack: useCallback((track) => runtimeRef.current?.selectSubtitleTrack(track), []),
         stop: useCallback(() => {
             const runtime = runtimeRef.current;
-            return runtime ? playbackRuntimeRegistry.deactivate(runtime) : undefined;
+            return runtime ? leaseRef.current.deactivate(runtime) : undefined;
         }, [])
     };
 }
