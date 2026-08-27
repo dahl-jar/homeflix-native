@@ -29,3 +29,11 @@ test('should grant workflow read-only repository access', async () => {
 
     assert.match(workflow, /^permissions:\n  contents: read$/m);
 });
+
+test('should use actions with Node 24 runtimes', async () => {
+    const workflow = await readFile(WORKFLOW_URL, 'utf8');
+
+    assert.equal(workflow.match(/uses: actions\/checkout@v7/g)?.length, 3);
+    assert.equal(workflow.match(/uses: actions\/setup-node@v7/g)?.length, 3);
+    assert.equal(workflow.match(/uses: pnpm\/action-setup@v6/g)?.length, 3);
+});
