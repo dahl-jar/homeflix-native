@@ -2,7 +2,7 @@ import {
     reportPlaybackStart,
     reportPlaybackProgress,
     reportPlaybackStop
-} from '../sources/playbackApi.js';
+} from '../sources/playbackApi.ts';
 
 const DEFAULT_PROGRESS_INTERVAL_MS = 10_000;
 

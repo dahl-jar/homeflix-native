@@ -21,13 +21,13 @@ export default [
   },
   ...expoConfig,
   {
-    files: ['app/**/*.js', 'src/**/*.js'],
+    files: ['app/**/*.{js,ts}', 'src/**/*.{js,ts}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
     settings: {
-      'import/resolver': { node: { extensions: ['.js', '.json'] } },
+      'import/resolver': { node: { extensions: ['.js', '.ts', '.json'] } },
     },
     rules: {
       eqeqeq: ['error', 'always', { null: 'ignore' }],
@@ -40,8 +40,18 @@ export default [
     },
   },
   {
-    files: ['src/**/*.js'],
+    files: ['src/**/*.{js,ts}'],
     rules: { 'import/no-default-export': 'error' },
+  },
+  {
+    files: ['app/**/*.ts', 'src/**/*.ts'],
+    rules: {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      }],
+    },
   },
   {
     files: ['scripts/**/*.js', 'eslint.config.js'],

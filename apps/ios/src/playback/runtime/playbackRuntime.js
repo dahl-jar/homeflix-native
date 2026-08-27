@@ -3,7 +3,7 @@ import {
     transitionPlaybackProgress
 } from '../pipeline/playbackProgress.js';
 import { playbackSessionSnapshot } from '../session-monitoring/playbackSessionSnapshot.js';
-import { negotiatePlayback } from '../sources/playbackCoordinator.js';
+import { negotiatePlayback } from '../sources/playbackCoordinator.ts';
 import { serverTrackSnapshot } from '../tracks/playbackTrackMetadata.js';
 import {
     audioTrackOverride,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { negotiatePlayback } from '../playbackCoordinator.js';
+import { negotiatePlayback } from '../playbackCoordinator.ts';
 
 function source(fields = {}) {
     return {

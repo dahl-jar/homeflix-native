@@ -7,7 +7,7 @@ import {
     reportPlaybackStart,
     reportPlaybackProgress,
     reportPlaybackStop
-} from '../../sources/playbackApi.js';
+} from '../../sources/playbackApi.ts';
 import { getPlaybackProgress } from '../playbackProgressApi.js';
 
 function recordingClient(result = {}) {

@@ -8,9 +8,10 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "lint": "eslint app src eslint.config.js",
+    "typecheck": "tsc --noEmit",
     "dup": "jscpd app src --noTips",
     "test": "node --test \"src/**/*.test.js\"",
-    "check": "pnpm lint && pnpm dup && pnpm test && pnpm audit --audit-level=low"
+    "check": "pnpm lint && pnpm typecheck && pnpm dup && pnpm test && pnpm audit --audit-level=low"
   },
   "dependencies": {
     "@expo/vector-icons": "15.1.1",
@@ -18,6 +19,7 @@
     "expo": "57.0.15",
     "expo-blur": "57.0.2",
     "expo-constants": "57.0.13",
+    "expo-crypto": "~57.0.2",
     "expo-image": "57.0.3",
     "expo-linear-gradient": "57.0.1",
     "expo-linking": "57.0.7",
@@ -38,6 +40,7 @@
     "eslint-config-expo": "57.0.1",
     "eslint-plugin-import": "2.32.0",
     "globals": "17.6.0",
-    "jscpd": "4.2.4"
+    "jscpd": "4.2.4",
+    "typescript": "~6.0.3"
   }
 }

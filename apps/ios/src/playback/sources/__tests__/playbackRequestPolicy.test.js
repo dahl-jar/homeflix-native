@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createPlaybackRequestPolicy } from '../playbackRequestPolicy.js';
+import { createPlaybackRequestPolicy } from '../playbackRequestPolicy.ts';
 
 test('should discover iOS sources without progressive direct stream', () => {
     assert.deepEqual(createPlaybackRequestPolicy('ios'), {

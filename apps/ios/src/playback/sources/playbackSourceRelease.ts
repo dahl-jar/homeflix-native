@@ -1,10 +1,21 @@
 import { createVideoSource } from '../video/videoSource.js';
 
-import { releasePlaybackSource } from './playbackApi.js';
-import { playbackMethod } from './playbackMethod.js';
-import { createPlaybackRequestPolicy } from './playbackRequestPolicy.js';
+import { releasePlaybackSource } from './playbackApi.ts';
+import { playbackMethod } from './playbackMethod.ts';
+import { createPlaybackRequestPolicy } from './playbackRequestPolicy.ts';
+import type {
+    PlaybackAttempt,
+    PlaybackInfo,
+    PlaybackOptions,
+    PlaybackPipeline,
+    PlaybackRequest,
+    PlaybackResolution,
+    ReleasePlaybackRequest,
+    ReleasedPlayback,
+    VideoSource
+} from './playbackTypes.ts';
 
-function sourceById(playbackInfo, mediaSourceId) {
+function sourceById(playbackInfo: PlaybackInfo, mediaSourceId: string) {
     return playbackInfo.MediaSources?.find((source) => source.Id === mediaSourceId) ?? null;
 }
 
@@ -14,8 +25,14 @@ export async function releaseResolvedPlayback({
     pipeline,
     request,
     resolution
-}) {
-    const releaseRequest = {
+}: {
+    attempt: PlaybackAttempt;
+    options: PlaybackOptions;
+    pipeline: PlaybackPipeline;
+    request: PlaybackRequest;
+    resolution: PlaybackResolution;
+}): Promise<ReleasedPlayback> {
+    const releaseRequest: ReleasePlaybackRequest = {
         ...request,
         ...createPlaybackRequestPolicy(options.platform, resolution.mediaSource),
         mediaSourceId: resolution.mediaSource.Id,
@@ -35,7 +52,7 @@ export async function releaseResolvedPlayback({
         audioStreamIndex: resolution.audioStreamIndex,
         subtitleStreamIndex: resolution.subtitleStreamIndex
     };
-    const video = createVideoSource({
+    const video: VideoSource = createVideoSource({
         serverUrl: options.serverUrl,
         itemId: options.item.Id,
         playbackInfo,
@@ -48,7 +65,7 @@ export async function releaseResolvedPlayback({
     });
     return {
         mediaSource,
-        playbackInfo,
+        playbackInfo: { ...playbackInfo, PlaySessionId: playbackInfo.PlaySessionId },
         playMethod,
         tracks,
         video

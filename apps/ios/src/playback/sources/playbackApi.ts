@@ -1,4 +1,13 @@
-function playbackBody(request) {
+import type { ApiClient } from '../../api/client/client.ts';
+
+import type {
+    PlaybackBaseRequest,
+    PlaybackInfo,
+    PlaybackRequest,
+    ReleasePlaybackRequest
+} from './playbackTypes.ts';
+
+function playbackBody(request: PlaybackBaseRequest) {
     return {
         UserId: request.userId,
         DeviceProfile: request.deviceProfile,
@@ -11,9 +20,9 @@ function playbackBody(request) {
     };
 }
 
-export function resolvePlaybackAttempt(client, request) {
+export function resolvePlaybackAttempt(client: ApiClient, request: PlaybackRequest) {
     const override = request.trackOverride;
-    return client.post(`/Items/${request.itemId}/PlaybackInfo`, {
+    return client.post<PlaybackInfo>(`/Items/${request.itemId}/PlaybackInfo`, {
         ...playbackBody(request),
         PlaybackPipelineId: request.pipelineId,
         PlaybackAttemptId: request.attemptId,
@@ -28,8 +37,8 @@ export function resolvePlaybackAttempt(client, request) {
     });
 }
 
-export function releasePlaybackSource(client, request) {
-    return client.post(`/Items/${request.itemId}/PlaybackInfo`, {
+export function releasePlaybackSource(client: ApiClient, request: ReleasePlaybackRequest) {
+    return client.post<PlaybackInfo>(`/Items/${request.itemId}/PlaybackInfo`, {
         ...playbackBody(request),
         MediaSourceId: request.mediaSourceId,
         PlaybackPipelineId: request.pipelineId,
@@ -42,14 +51,14 @@ export function releasePlaybackSource(client, request) {
     });
 }
 
-export function reportPlaybackStart(client, payload) {
+export function reportPlaybackStart(client: ApiClient, payload: Record<string, unknown>) {
     return client.postNoContent('/Sessions/Playing', payload);
 }
 
-export function reportPlaybackProgress(client, payload) {
+export function reportPlaybackProgress(client: ApiClient, payload: Record<string, unknown>) {
     return client.postNoContent('/Sessions/Playing/Progress', payload);
 }
 
-export function reportPlaybackStop(client, payload) {
+export function reportPlaybackStop(client: ApiClient, payload: Record<string, unknown>) {
     return client.postNoContent('/Sessions/Playing/Stopped', payload);
 }

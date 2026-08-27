@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { fetchMe } from '../api/auth/auth.js';
-import { createClient } from '../api/client/client.js';
+import { createClient } from '../api/client/client.ts';
+import { loadClientIdentity } from '../api/client/clientIdentityStore.ts';
 
 import { resolveServer } from './serverResolver.js';
 import { saveSession, loadSession, clearSession } from './tokenStore.js';
@@ -21,12 +22,17 @@ export function SessionProvider({ children }) {
     const [status, setStatus] = useState(STATUS.restoring);
     const [serverUrl, setServerUrl] = useState(null);
     const [session, setSession] = useState(null);
+    const [clientIdentity, setClientIdentity] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const resolved = await resolveServer();
+            const [resolved, identity] = await Promise.all([
+                resolveServer(),
+                loadClientIdentity()
+            ]);
             if (cancelled) return;
+            setClientIdentity(identity);
             if (!resolved) {
                 setStatus(STATUS.unreachable);
                 return;
@@ -39,7 +45,11 @@ export function SessionProvider({ children }) {
                 return;
             }
             try {
-                const client = createClient({ baseUrl: resolved, token: saved.accessToken });
+                const client = createClient({
+                    baseUrl: resolved,
+                    token: saved.accessToken,
+                    ...identity
+                });
                 const me = await fetchMe(client);
                 if (!cancelled) {
                     setSession({ userId: saved.userId, accessToken: saved.accessToken, user: me });
@@ -57,10 +67,14 @@ export function SessionProvider({ children }) {
 
     const value = useMemo(() => {
         const client =
-            serverUrl && session
-                ? createClient({ baseUrl: serverUrl, token: session.accessToken })
-                : serverUrl
-                    ? createClient({ baseUrl: serverUrl, token: '' })
+            serverUrl && clientIdentity && session
+                ? createClient({
+                    baseUrl: serverUrl,
+                    token: session.accessToken,
+                    ...clientIdentity
+                })
+                : serverUrl && clientIdentity
+                    ? createClient({ baseUrl: serverUrl, token: '', ...clientIdentity })
                     : null;
         return {
             status,
@@ -91,7 +105,7 @@ export function SessionProvider({ children }) {
                 });
             }
         };
-    }, [status, serverUrl, session]);
+    }, [status, serverUrl, session, clientIdentity]);
 
     return <SessionContext value={value}>{children}</SessionContext>;
 }
