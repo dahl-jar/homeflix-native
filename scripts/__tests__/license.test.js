@@ -20,3 +20,10 @@ test('should declare MPL 2.0 across repository metadata', async () => {
     assert.match(license, /^Mozilla Public License Version 2\.0/);
     assert.match(readme, /\[Mozilla Public License 2\.0\]\(LICENSE\)/);
 });
+
+test('should exclude showcase media from the project license', async () => {
+    const notice = await readFile(new URL('NOTICE.md', ROOT_URL), 'utf8');
+
+    assert.match(notice, /docs\/images/);
+    assert.match(notice, /not covered by the Mozilla Public License 2\.0/);
+});

@@ -40,7 +40,7 @@ Details combine metadata, playback actions, an overview, genres, and related tit
 
 ### Playback pipeline
 
-Play starts a server-driven pipeline that checks sources, analyzes the selected source, chooses tracks, prepares the stream, and hands it to the native player.
+The pipeline view follows the stages reported for the current playback request, then hands the playable stream to the native player.
 
 <p align="center">
   <img src="docs/images/pipeline.png" width="42%" alt="Playback pipeline">
@@ -80,7 +80,7 @@ Optional integrations:
 
 - **Home and Search feed:** `GET /HomeFlix/Recommendations` supplies ranked `{ ItemId, Rank }` entries. Another feed can be selected in `apps/ios/src/api/recommendations/recommendations.js`.
 
-- **Search beyond the library:** Extend `/Items` to include movies and series not yet in Jellyfin's database. Opening one must return a normal Jellyfin item from `GET /Users/{userId}/Items/{itemId}` so its details can load.
+- **Catalog search:** Extend `/Items` with another server-managed catalog. Opening a result must return a normal Jellyfin item from `GET /Users/{userId}/Items/{itemId}` so its details can load.
 
 - **Loading stages:** `GET /Playback/PipelineProgress` shows detailed preparation progress. Without it, the app shows a general loading state.
 
@@ -104,4 +104,4 @@ The build workflow produces an unsigned `Homeflix.ipa` from `main`. Sign and ins
 
 ## License
 
-Homeflix is available under the [Mozilla Public License 2.0](LICENSE).
+Homeflix source code is available under the [Mozilla Public License 2.0](LICENSE). Showcase media is covered by [NOTICE](NOTICE.md).

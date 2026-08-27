@@ -1,0 +1,12 @@
+[
+  { "ItemId": "item-one", "Rank": 1 },
+  { "ItemId": "item-two", "Rank": 2 },
+  { "ItemId": "item-three", "Rank": 3 },
+  { "ItemId": "item-four", "Rank": 4 },
+  { "ItemId": "item-five", "Rank": 5 },
+  { "ItemId": "item-six", "Rank": 6 },
+  { "ItemId": "item-seven", "Rank": 7 },
+  { "ItemId": "item-eight", "Rank": 8 },
+  { "ItemId": "item-nine", "Rank": 9 },
+  { "ItemId": "item-ten", "Rank": 10 }
+]

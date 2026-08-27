@@ -23,3 +23,9 @@ test('should run lint test and build jobs in sequence', async () => {
     assert.match(testJob, /run: pnpm audit --audit-level=low/);
     assert.match(buildJob, /needs: test/);
 });
+
+test('should grant workflow read-only repository access', async () => {
+    const workflow = await readFile(WORKFLOW_URL, 'utf8');
+
+    assert.match(workflow, /^permissions:\n  contents: read$/m);
+});

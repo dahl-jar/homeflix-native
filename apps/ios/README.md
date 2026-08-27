@@ -1,6 +1,6 @@
 # Homeflix for iOS
 
-This package expects the custom Jellyfin API extensions provided by the Homeflix server.
+This package expects the Jellyfin-compatible API described in the root README.
 
 ## Run
 
@@ -18,15 +18,6 @@ Set `EXPO_PUBLIC_HOMEFLIX_SERVER_URLS` in `apps/ios/.env.local` to one or more c
 pnpm start
 pnpm check
 ```
-
-## Fixtures
-
-```bash
-HOMEFLIX_SERVER_URL=https://media.example.com \
-HOMEFLIX_PIN=<pin> apps/ios/scripts/capture-fixtures.sh
-```
-
-Captured responses are stored in `src/api/__tests__/fixtures/`. The script removes access tokens and fails if a live token reaches a fixture.
 
 ## Unsigned build
 

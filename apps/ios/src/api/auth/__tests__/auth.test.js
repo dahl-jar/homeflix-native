@@ -11,11 +11,11 @@ const publicUsers = JSON.parse(
 test('should decode public users fixture into gate cards', () => {
     const cards = publicUsers.map(toGateCard);
 
-    const owen = cards.find((card) => card.name === 'owen');
-    assert.ok(owen.id.length > 0);
-    assert.equal(owen.hasPassword, true);
+    const darrow = cards.find((card) => card.name === 'Darrow');
+    assert.equal(darrow.id, 'user-one');
+    assert.equal(darrow.hasPassword, true);
     const passwordless = cards.filter((card) => card.hasPassword === false);
-    assert.ok(passwordless.length >= 2);
+    assert.equal(passwordless.length, 2);
 });
 
 test('should send empty password for passwordless profiles', async () => {
@@ -27,7 +27,7 @@ test('should send empty password for passwordless profiles', async () => {
         }
     };
 
-    await authenticate(client, 'seb');
+    await authenticate(client, 'Goblin');
 
     assert.equal(bodies[0].body.Pw, '');
 });

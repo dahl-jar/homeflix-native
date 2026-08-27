@@ -11,7 +11,7 @@ import { fetchRecommendations } from '../../src/api/recommendations/recommendati
 import { billboardItems } from '../../src/features/home/billboard.js';
 import { BillboardView } from '../../src/features/home/BillboardView.js';
 import { HomeSkeleton } from '../../src/features/home/HomeSkeleton.js';
-import { dropStreamRows } from '../../src/features/home/latestRow.js';
+import { dropHttpPathRows } from '../../src/features/home/latestRow.js';
 import { MediaRow } from '../../src/features/home/MediaRow.js';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { colors, spacing } from '../../src/theme/tokens.js';
@@ -60,7 +60,7 @@ export default function HomeScreen() {
                         ? fetchLatestMovies(client, userId, view.Id)
                         : fetchLatest(client, userId, view.Id)
                     )
-                        .then(dropStreamRows)
+                        .then(dropHttpPathRows)
                         .catch(() => [])
                 }))
             );
