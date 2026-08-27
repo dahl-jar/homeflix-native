@@ -5,10 +5,12 @@
 <h1 align="center">Homeflix</h1>
 
 <p align="center">
-  A sideloaded iOS frontend for a self-hosted media library.
+  Homeflix is an iPhone video client for a self-hosted media library. It uses the Jellyfin API for the library and a small playback extension for source selection and stream preparation.
 </p>
 
-> Homeflix depends on custom Jellyfin API extensions from the Homeflix server. It may not work with a stock Jellyfin install.
+## Stack
+
+React Native 0.86 · React 19 · Expo 57 · Expo Router · Expo Video · Jellyfin API
 
 ## Showcase
 
@@ -60,6 +62,30 @@ The episode picker shows the current and following episodes with artwork, runtim
   <img src="docs/images/episodes.png" width="92%" alt="Landscape episode selector">
 </p>
 
+## Requirements
+
+- A Jellyfin-compatible backend with the playback extension below
+
+- Network access from the iPhone to the backend
+
+- An iOS signing and sideloading setup
+
+### Server API
+
+Homeflix uses the standard Jellyfin API for sign-in, browsing, artwork, episodes, skip segments, and playback sessions. The backend can be a Jellyfin fork, plugin, or adapter.
+
+Playback adds a small extension to `POST /Items/{itemId}/PlaybackInfo` so the backend can select and return a playable source. It may return the source immediately; loading stages are optional.
+
+Optional integrations:
+
+- **Home and Search feed:** `GET /HomeFlix/Recommendations` supplies ranked `{ ItemId, Rank }` entries. Another feed can be selected in `apps/ios/src/api/recommendations/recommendations.js`.
+
+- **Search beyond the library:** Extend `/Items` to include movies and series not yet in Jellyfin's database. Opening one must return a normal Jellyfin item from `GET /Users/{userId}/Items/{itemId}` so its details can load.
+
+- **Loading stages:** `GET /Playback/PipelineProgress` shows detailed preparation progress. Without it, the app shows a general loading state.
+
+- **Bug monitoring:** `POST /ClientLog/PlaybackPipeline` records source and track selection, player state, and failures. Reporting failures do not stop playback.
+
 ## Run
 
 Create the ignored local configuration file, then add one or more comma-separated server URLs to `EXPO_PUBLIC_HOMEFLIX_SERVER_URLS`.
@@ -75,3 +101,7 @@ pnpm check
 ## Sideload
 
 The build workflow produces an unsigned `Homeflix.ipa` from `main`. Sign and install it with an iOS sideloading tool. Local build steps are in the [iOS README](apps/ios/README.md).
+
+## License
+
+Homeflix is available under the [Mozilla Public License 2.0](LICENSE).
