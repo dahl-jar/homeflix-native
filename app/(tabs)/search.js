@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TextInput, View, StyleSheet, useWindowDimensions } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, Text, TextInput, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { searchItems, fetchItemsByIds } from '../../src/api/items.js';
@@ -32,6 +32,8 @@ export default function SearchScreen() {
     const [query, setQuery] = useState('');
     const [searchStatus, setSearchStatus] = useState('idle');
     const [selectionFailed, setSelectionFailed] = useState(false);
+    const [selectionPending, setSelectionPending] = useState(false);
+    const selectionPendingRef = useRef(false);
     const { client, serverUrl, userId } = session;
 
     const cardWidth = (width - spacing.screen * 2 - spacing.card * (COLUMNS - 1)) / COLUMNS;
@@ -73,6 +75,10 @@ export default function SearchScreen() {
     useEffect(() => () => controller?.dispose(), [controller]);
 
     const selectItem = async (item) => {
+        if (selectionPendingRef.current) return;
+
+        selectionPendingRef.current = true;
+        setSelectionPending(true);
         setSelectionFailed(false);
         try {
             await selectSearchItem({
@@ -83,6 +89,9 @@ export default function SearchScreen() {
             });
         } catch {
             setSelectionFailed(true);
+        } finally {
+            selectionPendingRef.current = false;
+            setSelectionPending(false);
         }
     };
 
@@ -119,7 +128,7 @@ export default function SearchScreen() {
                 contentContainerStyle={{ paddingBottom: BOTTOM_CLEARANCE }}
                 onEndReachedThreshold={0.5}
                 onEndReached={() => controller?.loadMore()}
-                ListFooterComponent={searchPending ? (
+                ListFooterComponent={searchPending && !selectionPending ? (
                     <ActivityIndicator color={colors.textDim} style={styles.loader} />
                 ) : null}
                 renderItem={({ item }) => (
@@ -132,6 +141,23 @@ export default function SearchScreen() {
                     />
                 )}
             />
+            <Modal
+                visible={selectionPending}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => undefined}
+            >
+                <View style={styles.selectionLoading}>
+                    <ActivityIndicator
+                        color={colors.text}
+                        size="large"
+                        accessibilityLabel="Opening details"
+                        accessibilityRole="progressbar"
+                        accessibilityLiveRegion="polite"
+                    />
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -175,5 +201,11 @@ const styles = StyleSheet.create({
     },
     loader: {
         paddingVertical: 20
+    },
+    selectionLoading: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.glassBg
     }
 });

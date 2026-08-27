@@ -19,6 +19,32 @@ test('should navigate with the canonical item id returned by the server', async 
     assert.deepEqual(routes, ['/details/canonical-item']);
 });
 
+test('should request metadata only before opening a search result', async () => {
+    const requests = [];
+    const client = {
+        get: async (path, params) => {
+            requests.push({ path, params });
+            return { Id: 'canonical-item' };
+        }
+    };
+
+    await selectSearchItem({
+        client,
+        userId: 'user-id',
+        itemId: 'synthetic-item',
+        navigate: () => {}
+    });
+
+    assert.deepEqual(requests, [{
+        path: '/Users/user-id/Items/synthetic-item',
+        params: {
+            includeMediaSources: false,
+            includeMediaStreams: false,
+            waitForSeriesTree: false
+        }
+    }]);
+});
+
 test('should keep search open when materialization fails', async () => {
     const routes = [];
     const client = {

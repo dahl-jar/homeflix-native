@@ -10,6 +10,7 @@ import { colors } from '../src/theme/tokens.js';
 
 const KEYPAD = [1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'back'];
 const PIN_LENGTH = 4;
+const VERTICAL_BIAS = 48;
 
 export default function PinScreen() {
     const router = useRouter();
@@ -77,7 +78,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.bg,
         alignItems: 'center',
-        paddingTop: 120
+        justifyContent: 'center',
+        paddingTop: VERTICAL_BIAS
     },
     back: {
         top: 62,
