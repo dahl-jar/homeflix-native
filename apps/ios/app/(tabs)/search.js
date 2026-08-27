@@ -3,10 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Text, TextInput, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { searchItems, fetchItemsByIds } from '../../src/api/items.js';
-import { fetchRecommendations } from '../../src/api/recommendations.js';
-import { GridPosterCard } from '../../src/components/GridPosterCard.js';
-import { ScreenBackground } from '../../src/components/ScreenBackground.js';
+import { searchItems, fetchItemsByIds } from '../../src/api/items/items.js';
+import { fetchRecommendations } from '../../src/api/recommendations/recommendations.js';
+import { GridPosterCard } from '../../src/components/GridPosterCard/GridPosterCard.js';
+import { ScreenBackground } from '../../src/components/ScreenBackground/ScreenBackground.js';
 import { createPagedSearchController } from '../../src/features/search/pagedSearch.js';
 import { selectSearchItem } from '../../src/features/search/selectSearchItem.js';
 import { useSession } from '../../src/session/SessionProvider.js';

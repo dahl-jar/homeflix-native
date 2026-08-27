@@ -2,10 +2,10 @@ import { Redirect, useIsFocused, useLocalSearchParams, useRouter } from 'expo-ro
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { PlaybackPipelineActiveArc } from '../../src/playback/pipeline/PlaybackPipelineActiveArc.js';
-import { PlaybackController } from '../../src/playback/PlaybackController.js';
-import { exitPlaybackRoute } from '../../src/playback/playerNavigation.js';
-import { restoreAppPortrait } from '../../src/playback/playerOrientation.js';
-import { usePlaybackItem } from '../../src/playback/usePlaybackItem.js';
+import { PlaybackController } from '../../src/playback/player/PlaybackController.js';
+import { exitPlaybackRoute } from '../../src/playback/player/playerNavigation.js';
+import { restoreAppPortrait } from '../../src/playback/player/playerOrientation.js';
+import { usePlaybackItem } from '../../src/playback/player/usePlaybackItem.js';
 import { SESSION_STATUS, useSession } from '../../src/session/SessionProvider.js';
 import { colors } from '../../src/theme/tokens.js';
 

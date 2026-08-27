@@ -4,9 +4,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, View, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 
-import { backdropUrl } from '../../api/imageUrl.js';
-import { BackdropImage } from '../../components/BackdropImage.js';
-import { PlayPill } from '../../components/PlayPill.js';
+import { backdropUrl } from '../../api/images/imageUrl.js';
+import { BackdropImage } from '../../components/BackdropImage/BackdropImage.js';
+import { PlayPill } from '../../components/PlayPill/PlayPill.js';
 import { colors, radius, spacing } from '../../theme/tokens.js';
 
 const ROTATE_MS = 12000;

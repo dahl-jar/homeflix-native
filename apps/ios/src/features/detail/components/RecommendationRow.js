@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 
-import { MediaPosterCard } from '../../../components/MediaPosterCard.js';
+import { MediaPosterCard } from '../../../components/MediaPosterCard/MediaPosterCard.js';
 
 import { HorizontalSection } from './HorizontalSection.js';
 

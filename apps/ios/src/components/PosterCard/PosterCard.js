@@ -1,0 +1,41 @@
+import { Pressable, Text, View, StyleSheet } from 'react-native';
+
+import { colors, radius } from '../../theme/tokens.js';
+import { BackdropImage } from '../BackdropImage/BackdropImage.js';
+import { CardFallback } from '../CardFallback/CardFallback.js';
+
+const POSTER_RATIO = 2 / 3;
+
+export function PosterCard({ item, imageUri, width, onPress, showTitle = false }) {
+    return (
+        <Pressable onPress={onPress} style={{ width }}>
+            <View>
+                <BackdropImage
+                    uri={imageUri}
+                    style={[styles.poster, { width, height: width / POSTER_RATIO }]}
+                />
+                {!imageUri ? (
+                    <CardFallback label={item.Name} numberOfLines={3} paddingHorizontal={8} />
+                ) : null}
+            </View>
+            {showTitle ? (
+                <Text numberOfLines={1} style={styles.title}>
+                    {item.Name}
+                </Text>
+            ) : null}
+        </Pressable>
+    );
+}
+
+const styles = StyleSheet.create({
+    poster: {
+        borderRadius: radius.card,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(255, 255, 255, 0.10)'
+    },
+    title: {
+        color: colors.textDim,
+        fontSize: 12,
+        marginTop: 4
+    }
+});

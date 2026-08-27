@@ -2,8 +2,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Text, View, Pressable, StyleSheet } from 'react-native';
 
-import { authenticate } from '../src/api/auth.js';
-import { BackButton } from '../src/components/BackButton.js';
+import { authenticate } from '../src/api/auth/auth.js';
+import { BackButton } from '../src/components/BackButton/BackButton.js';
 import { createPinModel } from '../src/features/auth/pinModel.js';
 import { useSession } from '../src/session/SessionProvider.js';
 import { colors } from '../src/theme/tokens.js';

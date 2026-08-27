@@ -1,4 +1,13 @@
-export const SERVER_CANDIDATES = ['http://homeflix.invalid:8096', 'http://homeflix.invalid:8096'];
+export function parseServerCandidates(value) {
+    return (value ?? '')
+        .split(',')
+        .map((candidate) => candidate.trim().replace(/\/+$/, ''))
+        .filter(Boolean);
+}
+
+export const SERVER_CANDIDATES = parseServerCandidates(
+    process.env.EXPO_PUBLIC_HOMEFLIX_SERVER_URLS
+);
 
 const PROBE_PATH = '/System/Info/Public';
 const PROBE_TIMEOUT_MS = 2000;
@@ -14,7 +23,6 @@ export async function defaultProbe(baseUrl) {
     }
 }
 
-/** Probes all candidates concurrently; the lowest reachable index wins. */
 export async function resolveServer(candidates = SERVER_CANDIDATES, probe = defaultProbe) {
     const results = await Promise.all(candidates.map((url) => probe(url)));
     const index = results.findIndex(Boolean);

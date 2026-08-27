@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { billboardItems } from '../billboard.js';
 
 const recommendations = JSON.parse(
-    readFileSync(new URL('../../../api/__tests__/fixtures/recommendations.json', import.meta.url), 'utf8')
+    readFileSync(new URL('./mocks/recommendations.json', import.meta.url), 'utf8')
 );
 
 const resolveAll = (recs) =>

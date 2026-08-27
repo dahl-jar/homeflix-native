@@ -1,4 +1,4 @@
-import { fetchDetailItem } from '../../api/items.js';
+import { fetchDetailItem } from '../../api/items/items.js';
 
 export async function selectSearchItem({ client, userId, itemId, navigate }) {
     const item = await fetchDetailItem(client, userId, itemId);

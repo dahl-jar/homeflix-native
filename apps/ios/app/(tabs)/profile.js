@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenBackground } from '../../src/components/ScreenBackground.js';
+import { ScreenBackground } from '../../src/components/ScreenBackground/ScreenBackground.js';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { colors, radius, spacing } from '../../src/theme/tokens.js';
 

@@ -1,8 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { primaryUrl } from '../../../api/imageUrl.js';
-import { BackdropImage } from '../../../components/BackdropImage.js';
-import { playerLauncher } from '../../../playback/playerLauncher.js';
+import { primaryUrl } from '../../../api/images/imageUrl.js';
+import { BackdropImage } from '../../../components/BackdropImage/BackdropImage.js';
+import { playerLauncher } from '../../../playback/player/playerLauncher.js';
 import { colors, radius } from '../../../theme/tokens.js';
 import { runtimeText } from '../format.js';
 

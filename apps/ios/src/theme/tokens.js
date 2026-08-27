@@ -1,4 +1,3 @@
-/** Homeflix palette, mirroring the web theme tokens (01-tokens.css). */
 export const colors = {
     bg: '#151313',
     bgRaised: '#211d1e',

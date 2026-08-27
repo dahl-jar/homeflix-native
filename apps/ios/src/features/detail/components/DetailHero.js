@@ -1,9 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { backdropUrl } from '../../../api/imageUrl.js';
-import { BackButton } from '../../../components/BackButton.js';
-import { BackdropImage } from '../../../components/BackdropImage.js';
+import { backdropUrl } from '../../../api/images/imageUrl.js';
+import { BackButton } from '../../../components/BackButton/BackButton.js';
+import { BackdropImage } from '../../../components/BackdropImage/BackdropImage.js';
 import { colors, spacing } from '../../../theme/tokens.js';
 
 const BACKDROP_RATIO = 16 / 11;

@@ -1,8 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
-import { GhostTile } from '../../../components/GhostTile.js';
-import { PlayPill } from '../../../components/PlayPill.js';
-import { playerLauncher } from '../../../playback/playerLauncher.js';
+import { GhostTile } from '../../../components/GhostTile/GhostTile.js';
+import { PlayPill } from '../../../components/PlayPill/PlayPill.js';
+import { playerLauncher } from '../../../playback/player/playerLauncher.js';
 
 export function DetailActions({ item }) {
     return (

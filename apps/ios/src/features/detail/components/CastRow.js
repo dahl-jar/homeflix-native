@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BackdropImage } from '../../../components/BackdropImage.js';
+import { BackdropImage } from '../../../components/BackdropImage/BackdropImage.js';
 import { colors } from '../../../theme/tokens.js';
 
 import { HorizontalSection } from './HorizontalSection.js';

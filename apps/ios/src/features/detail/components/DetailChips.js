@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { GlassChip } from '../../../components/GlassChip.js';
+import { GlassChip } from '../../../components/GlassChip/GlassChip.js';
 import { chips, starText } from '../format.js';
 
 export function DetailChips({ item }) {

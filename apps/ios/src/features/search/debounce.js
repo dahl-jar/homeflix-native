@@ -1,7 +1,3 @@
-/**
- * Debounced search runner: trims input, drops whitespace-only queries,
- * and aborts the in-flight run when a newer query arrives.
- */
 export function createSearchController({ delayMs = 350, run }) {
     let timer = null;
     let inFlight = null;

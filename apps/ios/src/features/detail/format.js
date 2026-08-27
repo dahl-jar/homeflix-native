@@ -8,7 +8,6 @@ export function runtimeText(runTimeTicks) {
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
-/** Metadata chips shown under a detail title, in display order. */
 export function chips(item) {
     const parts = [];
     if (item.ProductionYear) parts.push(String(item.ProductionYear));

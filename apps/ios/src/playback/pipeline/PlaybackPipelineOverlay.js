@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { backdropUrl } from '../../api/imageUrl.js';
-import { BackdropImage } from '../../components/BackdropImage.js';
+import { backdropUrl } from '../../api/images/imageUrl.js';
+import { BackdropImage } from '../../components/BackdropImage/BackdropImage.js';
 import { colors } from '../../theme/tokens.js';
 
 import { CrossfadeText } from './CrossfadeText.js';

@@ -5,7 +5,7 @@ import {
     fetchDetailItem,
     fetchSeasons,
     fetchSimilar
-} from '../../api/items.js';
+} from '../../api/items/items.js';
 
 import { defaultSeasonIndex } from './seasons.js';
 

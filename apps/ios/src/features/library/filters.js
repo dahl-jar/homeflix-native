@@ -6,7 +6,6 @@ export const SORT_OPTIONS = [
     { key: 'recent', label: 'Recently Added', sortBy: 'DateCreated', sortOrder: 'Descending' }
 ];
 
-/** Distinct decades actually present in the library, newest first. */
 export function decadesFromYears(years) {
     const starts = [...new Set(years.map((year) => Math.floor(year / YEARS_PER_DECADE) * YEARS_PER_DECADE))];
     return starts
@@ -25,7 +24,6 @@ export const STATUS_OPTIONS = [
     { key: 'watched', label: 'Watched', isPlayed: true }
 ];
 
-/** Translates the dropdown selections into server-side /Items query params. */
 export function buildLibraryQuery({ sort, genre, decade, rating, status }) {
     const query = { sortBy: sort.sortBy, sortOrder: sort.sortOrder };
     if (genre) query.genres = genre;

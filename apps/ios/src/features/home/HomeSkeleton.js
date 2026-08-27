@@ -5,7 +5,6 @@ import { colors, radius, spacing } from '../../theme/tokens.js';
 const BILLBOARD_RATIO = 16 / 10;
 const CARD_COUNT = 3;
 
-/** Placeholder blocks shown while the first home load is in flight. */
 export function HomeSkeleton() {
     const { width } = useWindowDimensions();
 

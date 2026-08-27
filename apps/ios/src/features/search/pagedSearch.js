@@ -1,4 +1,4 @@
-import { createPager } from '../../api/paging.js';
+import { createPager } from '../../api/paging/paging.js';
 
 import { createSearchController } from './debounce.js';
 

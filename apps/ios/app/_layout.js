@@ -2,8 +2,8 @@ import { Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { routeAllowsRotation } from '../src/playback/orientationPolicy.js';
-import { useRouteOrientation } from '../src/playback/playerOrientation.js';
+import { routeAllowsRotation } from '../src/playback/player/orientationPolicy.js';
+import { useRouteOrientation } from '../src/playback/player/playerOrientation.js';
 import { SessionProvider } from '../src/session/SessionProvider.js';
 import { colors } from '../src/theme/tokens.js';
 

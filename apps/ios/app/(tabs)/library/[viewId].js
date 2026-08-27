@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, ScrollView, Pressable, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fetchLibraryPage, fetchFilterOptions, fetchItem } from '../../../src/api/items.js';
-import { createPager } from '../../../src/api/paging.js';
-import { DropdownPill } from '../../../src/components/DropdownPill.js';
-import { GridPosterCard } from '../../../src/components/GridPosterCard.js';
-import { ScreenBackground } from '../../../src/components/ScreenBackground.js';
+import { fetchLibraryPage, fetchFilterOptions, fetchItem } from '../../../src/api/items/items.js';
+import { createPager } from '../../../src/api/paging/paging.js';
+import { DropdownPill } from '../../../src/components/DropdownPill/DropdownPill.js';
+import { GridPosterCard } from '../../../src/components/GridPosterCard/GridPosterCard.js';
+import { ScreenBackground } from '../../../src/components/ScreenBackground/ScreenBackground.js';
 import {
     SORT_OPTIONS,
     RATING_OPTIONS,

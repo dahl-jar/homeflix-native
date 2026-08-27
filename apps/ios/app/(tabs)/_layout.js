@@ -2,8 +2,8 @@ import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { fetchUserViews } from '../../src/api/items.js';
-import { BottomPill } from '../../src/components/BottomPill.js';
+import { fetchUserViews } from '../../src/api/items/items.js';
+import { BottomPill } from '../../src/components/BottomPill/BottomPill.js';
 import { useSession } from '../../src/session/SessionProvider.js';
 import { colors } from '../../src/theme/tokens.js';
 

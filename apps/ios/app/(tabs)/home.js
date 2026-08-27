@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { backdropUrl } from '../../src/api/imageUrl.js';
-import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItemsByIds } from '../../src/api/items.js';
-import { fetchRecommendations } from '../../src/api/recommendations.js';
+import { backdropUrl } from '../../src/api/images/imageUrl.js';
+import { fetchResume, fetchUserViews, fetchLatest, fetchLatestMovies, fetchItemsByIds } from '../../src/api/items/items.js';
+import { fetchRecommendations } from '../../src/api/recommendations/recommendations.js';
 import { billboardItems } from '../../src/features/home/billboard.js';
 import { BillboardView } from '../../src/features/home/BillboardView.js';
 import { HomeSkeleton } from '../../src/features/home/HomeSkeleton.js';

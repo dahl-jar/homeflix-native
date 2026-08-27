@@ -16,7 +16,8 @@ export default function Entry() {
                 <>
                     <Text style={styles.wordmark}>HOMEFLIX</Text>
                     <Text style={styles.message}>
-                        Can’t reach the server.{'\n'}Check Wi-Fi or private network and try again.
+                        Can’t reach the server.{'\n'}Check the server configuration and network
+                        connection.
                     </Text>
                     <Pressable style={styles.retry} onPress={session.retryResolve}>
                         <Text style={styles.retryText}>Retry</Text>

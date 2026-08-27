@@ -5,9 +5,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, View, Pressable, StyleSheet, FlatList } from 'react-native';
 
-import { fetchPublicUsers, toGateCard, authenticate } from '../src/api/auth.js';
-import { userImageUrl } from '../src/api/imageUrl.js';
-import { ScreenBackground } from '../src/components/ScreenBackground.js';
+import { fetchPublicUsers, toGateCard, authenticate } from '../src/api/auth/auth.js';
+import { userImageUrl } from '../src/api/images/imageUrl.js';
+import { ScreenBackground } from '../src/components/ScreenBackground/ScreenBackground.js';
 import { useSession } from '../src/session/SessionProvider.js';
 import { colors, radius } from '../src/theme/tokens.js';
 

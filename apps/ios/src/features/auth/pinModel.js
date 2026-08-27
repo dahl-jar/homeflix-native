@@ -1,7 +1,3 @@
-/**
- * Four-digit PIN entry model. `append` reports submit exactly once the
- * final digit lands, mirroring the web gate's auto-submit.
- */
 export function createPinModel(length = 4) {
     const digits = [];
 
