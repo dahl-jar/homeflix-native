@@ -1,6 +1,10 @@
 node_modules/
-ios/
-android/
+/ios/
+/android/
+/apps/*/ios/
+/apps/*/android/
+/apps/*/build/
+/apps/*/Payload/
 .expo/
 dist/
 *.ipa

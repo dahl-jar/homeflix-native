@@ -1,3 +1,6 @@
+packages:
+  - 'apps/*'
+
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.17'
   - '@expo/fingerprint@0.20.9'

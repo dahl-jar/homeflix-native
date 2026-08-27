@@ -2,41 +2,13 @@
   "name": "homeflix-native",
   "version": "1.0.0",
   "private": true,
-  "main": "expo-router/entry",
-  "scripts": {
-    "start": "expo start",
-    "ios": "expo run:ios",
-    "lint": "eslint app src eslint.config.js",
-    "dup": "jscpd app src --noTips",
-    "test": "node --test \"src/**/*.test.js\"",
-    "check": "pnpm lint && pnpm dup && pnpm test && pnpm audit --audit-level=low"
-  },
-  "dependencies": {
-    "@expo/vector-icons": "15.1.1",
-    "@react-native-masked-view/masked-view": "0.3.2",
-    "expo": "57.0.15",
-    "expo-blur": "57.0.2",
-    "expo-constants": "57.0.13",
-    "expo-image": "57.0.3",
-    "expo-linear-gradient": "57.0.1",
-    "expo-linking": "57.0.7",
-    "expo-router": "57.0.15",
-    "expo-screen-orientation": "~57.0.1",
-    "expo-secure-store": "57.0.1",
-    "expo-status-bar": "57.0.1",
-    "expo-video": "57.0.2",
-    "react": "19.2.3",
-    "react-native": "0.86.2",
-    "react-native-safe-area-context": "5.7.0",
-    "react-native-screens": "4.26.2"
-  },
   "type": "module",
-  "devDependencies": {
-    "@eslint/js": "9.39.5",
-    "eslint": "9.39.5",
-    "eslint-config-expo": "57.0.1",
-    "eslint-plugin-import": "2.32.0",
-    "globals": "17.6.0",
-    "jscpd": "4.2.4"
+  "scripts": {
+    "start": "pnpm --filter @homeflix/ios start",
+    "ios": "pnpm --filter @homeflix/ios ios",
+    "lint": "pnpm --filter @homeflix/ios lint",
+    "dup": "pnpm --filter @homeflix/ios dup",
+    "test": "node --test \"scripts/**/*.test.js\" && pnpm --filter @homeflix/ios test",
+    "check": "pnpm lint && pnpm dup && pnpm test && pnpm audit --audit-level=low"
   }
 }

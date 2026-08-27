@@ -31,9 +31,11 @@ jobs:
 
       - name: Prebuild iOS project
         run: pnpm exec expo prebuild --platform ios --no-install
+        working-directory: apps/ios
 
       - name: Install pods
-        run: cd ios && pod install
+        run: pod install
+        working-directory: apps/ios/ios
 
       - name: Build unsigned release
         run: >
@@ -44,15 +46,17 @@ jobs:
           -sdk iphoneos
           -derivedDataPath build
           CODE_SIGNING_ALLOWED=NO
+        working-directory: apps/ios
 
       - name: Package IPA
         run: |
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/Homeflix.app Payload/
           zip -qry Homeflix.ipa Payload
+        working-directory: apps/ios
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: Homeflix-unsigned-ipa
-          path: Homeflix.ipa
+          path: apps/ios/Homeflix.ipa
