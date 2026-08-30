@@ -1,5 +1,8 @@
 import { playbackSessionSnapshot } from '../session-monitoring/playbackSessionSnapshot.js';
-import { mergeNativeTrackMetadata } from '../tracks/playbackTrackMetadata.js';
+import {
+    matchingNativeSubtitleTrack,
+    mergeNativeTrackMetadata
+} from '../tracks/playbackTrackMetadata.js';
 import { hasServerTrackCatalog } from '../tracks/playbackTrackOverride.js';
 
 function startPlayback(options) {
@@ -47,10 +50,18 @@ export function createPlaybackRuntimeCallbacks(options) {
             }
         },
         onSourceLoad(fields) {
+            const snapshot = options.getSnapshot();
+            const nativeSubtitleTrack = matchingNativeSubtitleTrack(
+                snapshot.selectedSubtitleTrack,
+                fields.subtitleTracks
+            );
             options.update({
                 ...fields,
-                ...mergeNativeTrackMetadata(options.getSnapshot(), fields)
+                ...mergeNativeTrackMetadata(snapshot, fields)
             });
+            if (nativeSubtitleTrack) {
+                options.getBinding().selectSubtitleTrack(nativeSubtitleTrack);
+            }
             options.log('source_loaded', {
                 durationSeconds: fields.durationSeconds,
                 audioTrackCount: fields.audioTracks.length,
@@ -62,7 +73,7 @@ export function createPlaybackRuntimeCallbacks(options) {
             options.update({ selectedAudioTrack: audioTrack });
         },
         onSubtitleTrackChange(subtitleTrack) {
-            if (!subtitleTrack && options.getSnapshot().selectedSubtitleTrack?.serverResolved) return;
+            if (options.getSnapshot().subtitleTracks.some((track) => track.serverResolved)) return;
             options.update({ selectedSubtitleTrack: subtitleTrack });
         },
         onEnded() {

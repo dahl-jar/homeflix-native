@@ -1,18 +1,46 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Modal, Pressable, Text, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../theme/tokens.js';
 
-const OPTION_HEIGHT = 45;
+import {
+    PICKER_OPTION_HEIGHT,
+    pickerIndexFromOffset,
+    pickerInsetForViewport,
+    pickerOffsetForIndex,
+    selectedPickerIndex
+} from './pickerModel.js';
 
 export function PickerOverlay({ visible, title, entries, isSelected, onChoose, onClose }) {
     const insets = useSafeAreaInsets();
     const { height, width } = useWindowDimensions();
     const landscape = width > height;
     const scrollRef = useRef(null);
+    const choosingRef = useRef(false);
+    const [viewportHeight, setViewportHeight] = useState(0);
+    const selectedIndex = selectedPickerIndex(entries, isSelected);
+    const contentInset = pickerInsetForViewport(viewportHeight);
+    const scrollToSelected = () => {
+        if (selectedIndex < 0) return;
+        scrollRef.current?.scrollTo({
+            y: pickerOffsetForIndex(selectedIndex),
+            animated: false
+        });
+    };
+    const chooseAtOffset = (offset) => {
+        if (choosingRef.current) return;
+        const index = pickerIndexFromOffset(offset, entries.length);
+        if (index < 0) return;
+        choosingRef.current = true;
+        onChoose(entries[index].key);
+    };
+    const adjustSelection = (direction) => {
+        const index = Math.max(0, Math.min(entries.length - 1, selectedIndex + direction));
+        if (entries[index]) onChoose(entries[index].key);
+    };
 
     return (
         <Modal
@@ -21,6 +49,7 @@ export function PickerOverlay({ visible, title, entries, isSelected, onChoose, o
             animationType="fade"
             supportedOrientations={['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right']}
             onRequestClose={onClose}
+            onShow={() => scrollToSelected()}
         >
             <BlurView intensity={70} tint="dark" style={styles.overlay}>
                 <View style={styles.overlayShade} />
@@ -38,15 +67,40 @@ export function PickerOverlay({ visible, title, entries, isSelected, onChoose, o
                         landscape ? styles.listContentLandscape : styles.listContentPortrait,
                         {
                             paddingLeft: Math.max(insets.left, 24),
-                            paddingRight: Math.max(insets.right, 24)
+                            paddingRight: Math.max(insets.right, 24),
+                            paddingTop: contentInset,
+                            paddingBottom: contentInset
                         }
                     ]}
+                    accessibilityActions={[
+                        { name: 'increment', label: 'Next option' },
+                        { name: 'decrement', label: 'Previous option' }
+                    ]}
+                    accessibilityRole="adjustable"
+                    accessibilityValue={{ text: entries[selectedIndex]?.label ?? '' }}
+                    decelerationRate="fast"
                     showsVerticalScrollIndicator={false}
+                    snapToAlignment="start"
+                    snapToInterval={PICKER_OPTION_HEIGHT}
+                    onAccessibilityAction={({ nativeEvent }) => {
+                        if (nativeEvent.actionName === 'increment') adjustSelection(1);
+                        if (nativeEvent.actionName === 'decrement') adjustSelection(-1);
+                    }}
                     onLayout={(event) => {
-                        const viewport = event.nativeEvent.layout.height;
-                        const selectedIndex = entries.findIndex((entry) => isSelected(entry));
-                        const target = selectedIndex * OPTION_HEIGHT - viewport / 2 + OPTION_HEIGHT / 2;
-                        if (target > 0) scrollRef.current?.scrollTo({ y: target, animated: false });
+                        setViewportHeight(event.nativeEvent.layout.height);
+                        scrollToSelected();
+                    }}
+                    onContentSizeChange={scrollToSelected}
+                    onMomentumScrollEnd={({ nativeEvent }) => {
+                        chooseAtOffset(nativeEvent.contentOffset.y);
+                    }}
+                    onScrollBeginDrag={() => {
+                        choosingRef.current = false;
+                    }}
+                    onScrollEndDrag={({ nativeEvent }) => {
+                        chooseAtOffset(
+                            nativeEvent.targetContentOffset?.y ?? nativeEvent.contentOffset.y
+                        );
                     }}
                 >
                     {entries.map((entry) => (
@@ -110,7 +164,7 @@ const styles = StyleSheet.create({
         paddingVertical: 32
     },
     option: {
-        height: OPTION_HEIGHT,
+        height: PICKER_OPTION_HEIGHT,
         width: '100%',
         maxWidth: 720,
         justifyContent: 'center',

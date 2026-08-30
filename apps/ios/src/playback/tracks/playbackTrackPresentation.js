@@ -26,7 +26,7 @@ function trackText(stream) {
     return `${stream.DisplayTitle ?? stream.label ?? ''} ${stream.Title ?? stream.name ?? ''}`.trim();
 }
 
-function languageName(stream) {
+export function playbackTrackLanguageName(stream) {
     const language = String(stream.Language ?? stream.language ?? '')
         .trim()
         .toLowerCase()
@@ -66,7 +66,7 @@ function playbackTrackLabel(stream, type) {
     const qualifiers = type === 'Audio'
         ? [audioLayout(stream)].filter(Boolean)
         : subtitleQualifiers(stream);
-    return [languageName(stream), ...qualifiers].join(' · ');
+    return [playbackTrackLanguageName(stream), ...qualifiers].join(' · ');
 }
 
 function deliveryLabel(stream, type) {

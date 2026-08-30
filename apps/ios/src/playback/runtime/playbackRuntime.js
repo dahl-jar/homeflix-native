@@ -15,6 +15,8 @@ import { bindNativePlayer } from '../video/nativePlayerAdapter.js';
 
 import { createPlaybackRuntimeCallbacks } from './playbackRuntimeCallbacks.js';
 
+const ignorePipelineProgress = () => undefined;
+
 export function createPlaybackRuntime({
     player,
     negotiationOptions,
@@ -90,7 +92,11 @@ export function createPlaybackRuntime({
         await binding.load(next.video.source, next.startSeconds);
     }
 
-    async function negotiateNext(startTimeTicks, changes = {}) {
+    async function negotiateNext(
+        startTimeTicks,
+        changes = {},
+        onPipelineProgress = advancePipeline
+    ) {
         return negotiate({
             ...negotiationOptions,
             ...changes,
@@ -98,7 +104,7 @@ export function createPlaybackRuntime({
             excludedSourceIds: rejectedSourceIds,
             pipeline: accepted?.pipeline,
             telemetry: accepted?.telemetry,
-            onPipelineProgress: advancePipeline
+            onPipelineProgress
         });
     }
 
@@ -115,7 +121,11 @@ export function createPlaybackRuntime({
                     binding = null;
                 },
                 update,
-                negotiateNext,
+                negotiateNext: (startTimeTicks, changes) => negotiateNext(
+                    startTimeTicks,
+                    changes,
+                    ignorePipelineProgress
+                ),
                 loadAccepted
             });
         } finally {
