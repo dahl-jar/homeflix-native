@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 class ProfileSelectionTest {
     @Test
     fun `should request pin for protected profile`() {
-        val profile = AuthProfile(id = "owen", name = "Owen", hasPassword = true)
+        val profile = AuthProfile(id = "member", name = "Member", hasPassword = true)
 
         val action = ProfileSelection.select(profile)
 

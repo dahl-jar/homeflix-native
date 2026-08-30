@@ -23,6 +23,9 @@ import app.homeflix.tv.feature.home.HomeViewer
 import app.homeflix.tv.feature.library.LibraryApi
 import app.homeflix.tv.feature.library.LibraryGateway
 import app.homeflix.tv.feature.library.LibraryScreen
+import app.homeflix.tv.feature.player.PlayerApi
+import app.homeflix.tv.feature.player.PlayerGateway
+import app.homeflix.tv.feature.player.PlayerScreen
 import app.homeflix.tv.feature.profile.ProfileDetails
 import app.homeflix.tv.feature.profile.ProfileScreen
 import app.homeflix.tv.feature.profile.profileServerAddress
@@ -47,7 +50,6 @@ private sealed interface AuthenticatedDestination {
 internal fun AuthenticatedContent(
     runtime: AppRuntime,
     restoredSession: StoredSession?,
-    onPlaySelected: (String) -> Unit,
     homeGateway: HomeGateway?,
     libraryGateway: LibraryGateway?,
     detailGateway: DetailGateway?,
@@ -74,7 +76,6 @@ internal fun AuthenticatedContent(
     SignedInContent(
         runtime = runtime,
         session = activeSession,
-        onPlaySelected = onPlaySelected,
         homeGateway = homeGateway,
         libraryGateway = libraryGateway,
         detailGateway = detailGateway,
@@ -92,7 +93,6 @@ internal fun AuthenticatedContent(
 private fun SignedInContent(
     runtime: AppRuntime,
     session: StoredSession,
-    onPlaySelected: (String) -> Unit,
     homeGateway: HomeGateway?,
     libraryGateway: LibraryGateway?,
     detailGateway: DetailGateway?,
@@ -104,18 +104,25 @@ private fun SignedInContent(
         rememberGateways(runtime, activeSession, homeGateway, libraryGateway, detailGateway, ioDispatcher)
     var detailStack by remember(activeSession) { mutableStateOf(emptyList<String>()) }
     val openDetail: (String) -> Unit = { itemId -> detailStack = detailStack + itemId }
-    var libraries by remember(gateways, activeSession) {
-        mutableStateOf(emptyList<LibrarySummary>())
-    }
+    var playerItem by remember(activeSession) { mutableStateOf<String?>(null) }
+    val libraries = rememberLibraries(gateways.library, activeSession.userId)
     var destination by remember(activeSession) {
         mutableStateOf<AuthenticatedDestination>(AuthenticatedDestination.Home)
     }
 
-    LaunchedEffect(gateways, activeSession) {
-        libraries = loadLibraries(gateways.library, activeSession.userId)
-    }
-
     val viewer = runtime.viewer(activeSession)
+
+    val activePlayerItem = playerItem
+    if (activePlayerItem != null) {
+        PlayerDestination(
+            gateway = gateways.player,
+            server = runtime.server,
+            userId = activeSession.userId,
+            itemId = activePlayerItem,
+            onExit = { playerItem = null },
+        )
+        return
+    }
 
     val activeDetailItem = detailStack.lastOrNull()
     if (activeDetailItem != null) {
@@ -131,7 +138,7 @@ private fun SignedInContent(
                 destination = selected
             },
             onMediaSelected = openDetail,
-            onPlaySelected = onPlaySelected,
+            onPlaySelected = { itemId -> playerItem = itemId },
         )
         return
     }
@@ -151,10 +158,40 @@ private fun SignedInContent(
     )
 }
 
+@Composable
+private fun rememberLibraries(
+    gateway: LibraryGateway,
+    userId: String,
+): List<LibrarySummary> {
+    var libraries by remember(gateway, userId) { mutableStateOf(emptyList<LibrarySummary>()) }
+    LaunchedEffect(gateway, userId) {
+        libraries = loadLibraries(gateway, userId)
+    }
+    return libraries
+}
+
+@Composable
+private fun PlayerDestination(
+    gateway: PlayerGateway,
+    server: String,
+    userId: String,
+    itemId: String,
+    onExit: () -> Unit,
+) {
+    PlayerScreen(
+        gateway = gateway,
+        baseUrl = server,
+        userId = userId,
+        itemId = itemId,
+        onExit = onExit,
+    )
+}
+
 private class SignedInGateways(
     val home: HomeGateway,
     val library: LibraryGateway,
     val detail: DetailGateway,
+    val player: PlayerGateway,
 )
 
 @Composable
@@ -170,11 +207,16 @@ private fun rememberGateways(
         remember(runtime, session, ioDispatcher) {
             authenticatedClient(runtime, session, ioDispatcher)
         }
-    return remember(runtime, client, homeGateway, libraryGateway, detailGateway) {
+    val playerClient =
+        remember(runtime, session, ioDispatcher) {
+            playbackClient(runtime, session, ioDispatcher)
+        }
+    return remember(runtime, client, playerClient, homeGateway, libraryGateway, detailGateway) {
         SignedInGateways(
             home = homeGateway ?: HomeApi(baseUrl = runtime.server, client = client),
             library = libraryGateway ?: LibraryApi(baseUrl = runtime.server, client = client),
             detail = detailGateway ?: DetailApi(baseUrl = runtime.server, client = client),
+            player = PlayerApi(baseUrl = runtime.server, client = playerClient),
         )
     }
 }

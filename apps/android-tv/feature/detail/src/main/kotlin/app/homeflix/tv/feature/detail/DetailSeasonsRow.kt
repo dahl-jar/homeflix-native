@@ -2,6 +2,7 @@ package app.homeflix.tv.feature.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,7 +90,11 @@ private fun SeasonTab(
                 .width(IntrinsicSize.Max)
                 .semantics { contentDescription = if (selected) "$name selected" else name }
                 .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-                .clickable(onClick = onClick),
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                ),
     ) {
         Text(
             text = name,

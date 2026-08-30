@@ -2,6 +2,7 @@ package app.homeflix.tv.feature.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -113,7 +114,11 @@ private fun ActionSettingRow(
                 .fillMaxWidth()
                 .semantics { this.contentDescription = contentDescription }
                 .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-                .clickable(onClick = onClick),
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                ),
     ) {
         SettingRowContent(label = label, value = value)
         FocusUnderline(isFocused)

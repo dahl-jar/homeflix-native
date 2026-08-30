@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,8 +39,11 @@ internal fun DetailPosterRail(
 ) {
     Column {
         RailTitle(title)
-        Spacer(Modifier.height(TITLE_ROW_SPACING))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(CARD_SPACING)) {
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = FOCUS_OVERFLOW_GUTTER, vertical = FOCUS_OVERFLOW_GUTTER),
+            horizontalArrangement = Arrangement.spacedBy(CARD_SPACING),
+            modifier = Modifier.railFocusOutset(FOCUS_OVERFLOW_GUTTER),
+        ) {
             items(
                 items = items,
                 key = MediaItem::id,
@@ -51,6 +56,15 @@ internal fun DetailPosterRail(
         }
     }
 }
+
+private fun Modifier.railFocusOutset(gutter: androidx.compose.ui.unit.Dp): Modifier =
+    layout { measurable, constraints ->
+        val extra = (gutter * 2).roundToPx()
+        val placeable = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth + extra))
+        layout(constraints.maxWidth, placeable.height) {
+            placeable.place(-extra / 2, 0)
+        }
+    }
 
 @Composable
 internal fun DetailCastRow(cast: List<CastMember>) {
@@ -149,6 +163,7 @@ private fun RailImageFallback() {
 }
 
 private val TITLE_ROW_SPACING = 10.dp
+private val FOCUS_OVERFLOW_GUTTER = 12.dp
 private val CARD_SPACING = 14.dp
 private val POSTER_WIDTH = 108.dp
 private val POSTER_HEIGHT = 162.dp

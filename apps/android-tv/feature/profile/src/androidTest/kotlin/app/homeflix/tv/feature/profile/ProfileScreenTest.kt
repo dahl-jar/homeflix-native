@@ -41,12 +41,12 @@ class ProfileScreenTest {
                 ProfileScreen(
                     details =
                         ProfileDetails(
-                            name = "Owen",
+                            name = "Alex",
                             avatarUrl = null,
-                            serverAddress = "192.168.1.20:8096",
+                            serverAddress = "192.0.2.20:8096",
                             appVersion = "1.0.0",
                         ),
-                    profile = TvNavProfile(name = "Owen", avatarUrl = null),
+                    profile = TvNavProfile(name = "Alex", avatarUrl = null),
                     libraries = emptyList(),
                     onHomeSelected = {},
                     onLibrarySelected = {},

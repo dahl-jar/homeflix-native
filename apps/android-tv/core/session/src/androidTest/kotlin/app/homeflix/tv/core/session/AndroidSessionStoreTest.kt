@@ -75,7 +75,8 @@ class AndroidSessionStoreTest {
 private class FailingSessionCipher : SessionCipher {
     var shouldFail = false
 
-    override fun encrypt(payload: String): EncryptedSession = EncryptedSession(initializationVector = "iv", ciphertext = payload)
+    override fun encrypt(payload: String): EncryptedSession =
+        EncryptedSession(initializationVector = "iv", ciphertext = payload)
 
     override fun decrypt(session: EncryptedSession): String {
         if (shouldFail) error("unreadable")

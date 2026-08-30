@@ -25,7 +25,6 @@ fun HomeflixApp(
     homeGateway: HomeGateway? = null,
     libraryGateway: LibraryGateway? = null,
     detailGateway: DetailGateway? = null,
-    onPlaySelected: (String) -> Unit = {},
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val context = LocalContext.current.applicationContext
@@ -55,7 +54,6 @@ fun HomeflixApp(
                 AuthenticatedContent(
                     runtime = current.runtime,
                     restoredSession = current.session,
-                    onPlaySelected = onPlaySelected,
                     homeGateway = homeGateway,
                     libraryGateway = libraryGateway,
                     detailGateway = detailGateway,

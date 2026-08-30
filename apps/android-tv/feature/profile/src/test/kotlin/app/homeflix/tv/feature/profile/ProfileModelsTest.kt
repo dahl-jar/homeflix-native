@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 class ProfileModelsTest {
     @Test
     fun `should strip http scheme`() {
-        assertEquals("192.168.1.20:8096", profileServerAddress("http://192.168.1.20:8096"))
+        assertEquals("192.0.2.20:8096", profileServerAddress("http://192.0.2.20:8096"))
     }
 
     @Test

@@ -29,6 +29,14 @@ val pitestTargets =
                 "app.homeflix.tv.feature.home.HomePolicy",
                 "app.homeflix.tv.feature.home.HomeHeroMetadata",
             ).joinToString(","),
+        ":feature:player" to
+            listOf(
+                "app.homeflix.tv.feature.player.PipelineProgressKt",
+                "app.homeflix.tv.feature.player.TvDeviceProfileKt",
+                "app.homeflix.tv.feature.player.SkipSegmentsKt",
+                "app.homeflix.tv.feature.player.NextEpisodeKt",
+                "app.homeflix.tv.feature.player.NextEpisodeCountdown",
+            ).joinToString(","),
     )
 
 subprojects {

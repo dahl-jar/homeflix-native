@@ -12,8 +12,12 @@ import app.homeflix.tv.feature.auth.AuthApi
 import app.homeflix.tv.feature.auth.AuthGateway
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import java.time.Duration
 import java.util.UUID
 
+private val PLAYBACK_CONNECT_TIMEOUT = Duration.ofSeconds(30)
+private val PLAYBACK_RESOLVE_READ_TIMEOUT = Duration.ofMinutes(5)
 private const val DEVICE_PREFERENCES = "homeflix-device"
 private const val DEVICE_ID_KEY = "device-id"
 
@@ -81,6 +85,25 @@ internal fun authenticatedClient(
         deviceId = runtime.deviceId,
         version = BuildConfig.VERSION_NAME,
         token = session.accessToken,
+        ioDispatcher = ioDispatcher,
+    )
+
+internal fun playbackClient(
+    runtime: AppRuntime,
+    session: StoredSession,
+    ioDispatcher: CoroutineDispatcher,
+): JellyfinClient =
+    JellyfinClient(
+        baseUrl = runtime.server,
+        deviceId = runtime.deviceId,
+        version = BuildConfig.VERSION_NAME,
+        token = session.accessToken,
+        callFactory =
+            OkHttpClient
+                .Builder()
+                .connectTimeout(PLAYBACK_CONNECT_TIMEOUT)
+                .readTimeout(PLAYBACK_RESOLVE_READ_TIMEOUT)
+                .build(),
         ioDispatcher = ioDispatcher,
     )
 

@@ -142,7 +142,8 @@ private class FakeDetailGateway(
     override suspend fun fetchDetail(
         userId: String,
         itemId: String,
-    ): DetailContent = DetailContent(item = item, cast = listOf(CastMember(id = "person-one", name = "Darrow", imageUrl = null)))
+    ): DetailContent =
+        DetailContent(item = item, cast = listOf(CastMember(id = "person-one", name = "Darrow", imageUrl = null)))
 
     override suspend fun fetchSimilar(
         userId: String,

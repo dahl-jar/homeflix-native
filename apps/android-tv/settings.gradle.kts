@@ -26,5 +26,6 @@ include(
     ":feature:detail",
     ":feature:home",
     ":feature:library",
+    ":feature:player",
     ":feature:profile",
 )
