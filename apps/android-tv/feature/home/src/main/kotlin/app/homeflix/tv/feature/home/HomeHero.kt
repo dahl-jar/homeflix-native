@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import coil3.compose.SubcomposeAsyncImage
 import java.time.ZonedDateTime
@@ -51,7 +52,7 @@ private val HERO_DETAILS_WIDTH = 430.dp
 private val RATING_STAR_SIZE = 14.dp
 
 @Composable
-internal fun HomeHero(item: HomeMediaItem?) {
+internal fun HomeHero(item: MediaItem?) {
     Box(
         modifier =
             Modifier
@@ -143,7 +144,7 @@ private fun HeroScrims() {
 
 @Composable
 private fun HeroDetails(
-    item: HomeMediaItem,
+    item: MediaItem,
     modifier: Modifier,
 ) {
     Column(
@@ -177,7 +178,7 @@ private fun HeroDetails(
 }
 
 @Composable
-private fun HeroMetadataLine(item: HomeMediaItem) {
+private fun HeroMetadataLine(item: MediaItem) {
     val now = remember(item.id) { ZonedDateTime.now() }
     val segments = HomeHeroMetadata.segments(item, now)
     if (segments.isEmpty()) return

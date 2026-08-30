@@ -1,5 +1,8 @@
 package app.homeflix.tv.feature.home
 
+import app.homeflix.tv.core.catalog.CatalogContract
+import app.homeflix.tv.core.catalog.LibrarySummary
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.network.JsonApiClient
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -41,7 +44,7 @@ class HomeApi(
             )
         }
 
-    private suspend fun fetchFeatured(userId: String): List<HomeMediaItem> {
+    private suspend fun fetchFeatured(userId: String): List<MediaItem> {
         val recommendations =
             HomeContract.recommendations(
                 json,
@@ -55,7 +58,7 @@ class HomeApi(
         if (ids.isEmpty()) return emptyList()
 
         val items =
-            HomeContract.items(
+            CatalogContract.items(
                 json = json,
                 baseUrl = baseUrl,
                 payload =
@@ -72,11 +75,11 @@ class HomeApi(
                             ),
                     ),
             )
-        return HomePolicy.rankFeatured(recommendations, items.associateBy(HomeMediaItem::id))
+        return HomePolicy.rankFeatured(recommendations, items.associateBy(MediaItem::id))
     }
 
-    private suspend fun fetchResume(userId: String): List<HomeMediaItem> =
-        HomeContract.items(
+    private suspend fun fetchResume(userId: String): List<MediaItem> =
+        CatalogContract.items(
             json = json,
             baseUrl = baseUrl,
             payload =
@@ -92,8 +95,8 @@ class HomeApi(
                 ),
         )
 
-    private suspend fun fetchViews(userId: String): List<HomeView> =
-        HomeContract.views(
+    private suspend fun fetchViews(userId: String): List<LibrarySummary> =
+        CatalogContract.views(
             json,
             client.get(
                 path = "/UserViews",
@@ -103,11 +106,11 @@ class HomeApi(
 
     private suspend fun fetchRecent(
         userId: String,
-        view: HomeView,
+        view: LibrarySummary,
     ): HomeRail {
         val items =
             if (view.collectionType == MOVIES_COLLECTION) {
-                HomeContract.recentItems(
+                CatalogContract.recentItems(
                     json = json,
                     baseUrl = baseUrl,
                     payload =
@@ -127,7 +130,7 @@ class HomeApi(
                         ),
                 )
             } else {
-                HomeContract.latestItems(
+                CatalogContract.latestItems(
                     json = json,
                     baseUrl = baseUrl,
                     payload =

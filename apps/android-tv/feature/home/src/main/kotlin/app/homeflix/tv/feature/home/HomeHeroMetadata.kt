@@ -1,5 +1,6 @@
 package app.homeflix.tv.feature.home
 
+import app.homeflix.tv.core.catalog.MediaItem
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -15,7 +16,7 @@ internal object HomeHeroMetadata {
     private val ENDS_AT_FORMATTER = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
 
     fun segments(
-        item: HomeMediaItem,
+        item: MediaItem,
         now: ZonedDateTime,
     ): List<String> =
         buildList {
@@ -28,14 +29,14 @@ internal object HomeHeroMetadata {
             item.runTimeTicks?.let { runtime -> add(endsAtLabel(item, runtime, now)) }
         }
 
-    fun communityRatingLabel(item: HomeMediaItem): String? = item.communityRating?.let(::formatRating)
+    fun communityRatingLabel(item: MediaItem): String? = item.communityRating?.let(::formatRating)
 
     private fun formatRating(rating: Float): String {
         val tenths = (rating * TENTHS_SCALE).roundToInt()
         return "${tenths / TENTHS_SCALE}.${tenths % TENTHS_SCALE}"
     }
 
-    private fun episodeLabel(item: HomeMediaItem): String? {
+    private fun episodeLabel(item: MediaItem): String? {
         val season = item.parentIndexNumber
         val episode = item.indexNumber
         return if (item.type == EPISODE_TYPE && season != null && episode != null) {
@@ -52,7 +53,7 @@ internal object HomeHeroMetadata {
         return if (hours > 0) "${hours}h ${remainder}m" else "${minutes}m"
     }
 
-    private fun remainingTicks(item: HomeMediaItem): Long? {
+    private fun remainingTicks(item: MediaItem): Long? {
         val runtime = item.runTimeTicks
         val position = item.playbackPositionTicks
         if (runtime == null || position == null) return null
@@ -60,7 +61,7 @@ internal object HomeHeroMetadata {
     }
 
     private fun endsAtLabel(
-        item: HomeMediaItem,
+        item: MediaItem,
         runtime: Long,
         now: ZonedDateTime,
     ): String {

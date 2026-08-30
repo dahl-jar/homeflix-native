@@ -12,7 +12,9 @@ import app.homeflix.tv.core.session.AndroidSessionStore
 import app.homeflix.tv.feature.auth.AuthGateway
 import app.homeflix.tv.feature.auth.AuthLoadingScreen
 import app.homeflix.tv.feature.auth.AuthUnavailableScreen
+import app.homeflix.tv.feature.detail.DetailGateway
 import app.homeflix.tv.feature.home.HomeGateway
+import app.homeflix.tv.feature.library.LibraryGateway
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -21,7 +23,9 @@ fun HomeflixApp(
     serverUrls: String = BuildConfig.HOMEFLIX_SERVER_URLS,
     authGateway: AuthGateway? = null,
     homeGateway: HomeGateway? = null,
-    onMediaSelected: (String) -> Unit = {},
+    libraryGateway: LibraryGateway? = null,
+    detailGateway: DetailGateway? = null,
+    onPlaySelected: (String) -> Unit = {},
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val context = LocalContext.current.applicationContext
@@ -51,8 +55,10 @@ fun HomeflixApp(
                 AuthenticatedContent(
                     runtime = current.runtime,
                     restoredSession = current.session,
-                    onMediaSelected = onMediaSelected,
+                    onPlaySelected = onPlaySelected,
                     homeGateway = homeGateway,
+                    libraryGateway = libraryGateway,
+                    detailGateway = detailGateway,
                     ioDispatcher = ioDispatcher,
                 )
         }

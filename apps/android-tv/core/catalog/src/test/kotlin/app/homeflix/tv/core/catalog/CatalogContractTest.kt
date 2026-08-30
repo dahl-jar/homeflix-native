@@ -1,11 +1,48 @@
-package app.homeflix.tv.feature.home
+package app.homeflix.tv.core.catalog
 
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
-class HomeContractTest {
+class CatalogContractTest {
+    @Test
+    fun `should parse page total`() {
+        val payload =
+            """
+            {"Items":[
+                {"Id":"movie-one","Name":"One"},
+                {"Id":"movie-two","Name":"Two"}
+            ],"TotalRecordCount":214}
+            """.trimIndent()
+
+        val page = CatalogContract.page(Json, "http://server", payload)
+
+        assertEquals(listOf("movie-one", "movie-two"), page.items.map(MediaItem::id))
+        assertEquals(214, page.totalRecordCount)
+    }
+
+    @Test
+    fun `should map collection types`() {
+        val payload =
+            """
+            {"Items":[
+                {"Id":"movies-view","Name":"Movies","CollectionType":"movies"},
+                {"Id":"mixed-view","Name":"Kids"}
+            ]}
+            """.trimIndent()
+
+        val views = CatalogContract.views(Json, payload)
+
+        assertEquals(
+            listOf(
+                LibrarySummary(id = "movies-view", name = "Movies", collectionType = "movies"),
+                LibrarySummary(id = "mixed-view", name = "Kids", collectionType = null),
+            ),
+            views,
+        )
+    }
+
     @Test
     fun `should drop HTTP recent items`() {
         val envelope =
@@ -23,8 +60,8 @@ class HomeContractTest {
             ]
             """.trimIndent()
 
-        val movieIds = HomeContract.recentItems(Json, "http://server", envelope).map(HomeMediaItem::id)
-        val latestIds = HomeContract.latestItems(Json, "http://server", latest).map(HomeMediaItem::id)
+        val movieIds = CatalogContract.recentItems(Json, "http://server", envelope).map(MediaItem::id)
+        val latestIds = CatalogContract.latestItems(Json, "http://server", latest).map(MediaItem::id)
 
         assertEquals(listOf("local-one"), movieIds)
         assertEquals(listOf("local-two"), latestIds)
@@ -41,7 +78,7 @@ class HomeContractTest {
             }]}
             """.trimIndent()
 
-        val item = HomeContract.items(Json, "http://server/", payload).single()
+        val item = CatalogContract.items(Json, "http://server/", payload).single()
 
         assertEquals(
             "http://server/Items/movie-one/Images/Primary?tag=primary-tag&maxWidth=440&quality=90",
@@ -63,7 +100,7 @@ class HomeContractTest {
             }]}
             """.trimIndent()
 
-        val item = HomeContract.items(Json, "http://server", payload).single()
+        val item = CatalogContract.items(Json, "http://server", payload).single()
         val seriesArtwork =
             "http://server/Items/series-one/Images/Primary?tag=series-tag&maxWidth=440&quality=90"
 
@@ -83,7 +120,7 @@ class HomeContractTest {
             }]}
             """.trimIndent()
 
-        val item = HomeContract.items(Json, "http://server", payload).single()
+        val item = CatalogContract.items(Json, "http://server", payload).single()
 
         assertEquals("Item One", item.seriesName)
         assertEquals(2, item.indexNumber)
@@ -103,7 +140,7 @@ class HomeContractTest {
             }]}
             """.trimIndent()
 
-        val item = HomeContract.items(Json, "http://server", payload).single()
+        val item = CatalogContract.items(Json, "http://server", payload).single()
 
         assertNull(item.primaryImageUrl)
         assertNull(item.backdropImageUrl)

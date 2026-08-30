@@ -57,6 +57,7 @@ tasks.withType<Detekt>().configureEach {
 }
 
 dependencies {
+    api(project(":core:catalog"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:network"))
     implementation(platform(libs.androidx.compose.bom))

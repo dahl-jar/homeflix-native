@@ -1,5 +1,6 @@
 package app.homeflix.tv.feature.home
 
+import app.homeflix.tv.core.catalog.MediaItem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.ZoneOffset
@@ -81,7 +82,7 @@ private val NOW: ZonedDateTime = ZonedDateTime.of(2026, 8, 30, 11, 26, 0, 0, Zon
 private const val TICKS_PER_MINUTE = 600_000_000L
 
 private val PRIMARY_ITEM =
-    HomeMediaItem(
+    MediaItem(
         id = "item-one",
         name = "Item One",
         type = "Movie",

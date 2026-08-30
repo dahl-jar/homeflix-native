@@ -78,11 +78,15 @@ tasks.withType<Detekt>().configureEach {
 }
 
 dependencies {
+    implementation(project(":core:catalog"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:network"))
     implementation(project(":core:session"))
     implementation(project(":feature:auth"))
+    implementation(project(":feature:detail"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:library"))
+    implementation(project(":feature:profile"))
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

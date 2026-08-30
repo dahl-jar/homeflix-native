@@ -11,10 +11,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import app.homeflix.tv.core.designsystem.TvFocusStyle
-
-private const val VERTICAL_PARENT_FRACTION = 0.70f
-private const val CHILD_CENTER_FRACTION = 0.5f
 
 private fun focusScrollSpec(): AnimationSpec<Float> =
     tween(
@@ -25,8 +23,9 @@ private fun focusScrollSpec(): AnimationSpec<Float> =
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun HomeVerticalFocusPositioning(content: @Composable () -> Unit) {
+    val titleAllowancePx = with(LocalDensity.current) { RAIL_TITLE_ALLOWANCE.toPx() }
     val focusPositioning =
-        remember {
+        remember(titleAllowancePx) {
             object : BringIntoViewSpec {
                 override val scrollAnimationSpec: AnimationSpec<Float> = focusScrollSpec()
 
@@ -34,22 +33,14 @@ internal fun HomeVerticalFocusPositioning(content: @Composable () -> Unit) {
                     offset: Float,
                     size: Float,
                     containerSize: Float,
-                ): Float {
-                    val leadingEdge =
-                        VERTICAL_PARENT_FRACTION * containerSize - CHILD_CENTER_FRACTION * size
-                    val targetEdge =
-                        if (size <= containerSize && containerSize - leadingEdge < size) {
-                            containerSize - size
-                        } else {
-                            leadingEdge
-                        }
-                    return offset - targetEdge
-                }
+                ): Float = offset - titleAllowancePx
             }
         }
 
     CompositionLocalProvider(LocalBringIntoViewSpec provides focusPositioning, content = content)
 }
+
+private val RAIL_TITLE_ALLOWANCE = 40.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

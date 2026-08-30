@@ -16,12 +16,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -34,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.tv.material3.Text
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.TvFocusSurface
 import coil3.compose.SubcomposeAsyncImage
@@ -47,7 +46,6 @@ private val POSTER_CARD_WIDTH = 108.dp
 private val POSTER_CARD_HEIGHT = 162.dp
 private const val CARD_GRADIENT_STOP = 0.48f
 private const val PERCENT_MAX = 100f
-private val RAIL_EDGE_FADE = 18.dp
 
 internal data class HomeRailFocus(
     val firstCard: FocusRequester,
@@ -58,7 +56,7 @@ internal data class HomeRailFocus(
 internal fun HomeMediaRail(
     rail: HomeRail,
     railFocus: HomeRailFocus?,
-    onFocused: (HomeMediaItem) -> Unit,
+    onFocused: (MediaItem) -> Unit,
     onMediaSelected: (String) -> Unit,
     featured: Boolean = false,
 ) {
@@ -84,19 +82,7 @@ internal fun HomeMediaRail(
                 modifier =
                     Modifier
                         .padding(start = HOME_NAV_GUTTER)
-                        .railEntry(railFocus)
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(
-                                brush =
-                                    Brush.horizontalGradient(
-                                        0f to HomeflixColors.Background,
-                                        1f to Color.Transparent,
-                                        endX = RAIL_EDGE_FADE.toPx(),
-                                    ),
-                                size = Size(RAIL_EDGE_FADE.toPx(), size.height),
-                            )
-                        },
+                        .focusRestorer(),
             ) {
                 itemsIndexed(
                     items = rail.items,
@@ -120,16 +106,9 @@ internal fun HomeMediaRail(
     }
 }
 
-private fun Modifier.railEntry(railFocus: HomeRailFocus?): Modifier =
-    if (railFocus != null) {
-        focusRequester(railFocus.entry).focusRestorer()
-    } else {
-        this
-    }
-
 @Composable
 private fun MediaCard(
-    item: HomeMediaItem,
+    item: MediaItem,
     dimensions: CardDimensions,
     onFocused: () -> Unit,
     onClick: () -> Unit,
@@ -179,7 +158,7 @@ private fun MediaCard(
 }
 
 @Composable
-private fun CardImage(item: HomeMediaItem) {
+private fun CardImage(item: MediaItem) {
     val imageUrl = item.primaryImageUrl ?: item.backdropImageUrl
     if (imageUrl == null) {
         CardFallback()

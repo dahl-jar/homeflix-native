@@ -7,4 +7,6 @@ import androidx.compose.ui.graphics.Shape
 class TvFocusAppearance(
     val shape: Shape = RoundedCornerShape(HomeflixDimensions.CardCornerRadius),
     val backgroundColor: Color = Color.Transparent,
+    val showFocusBorder: Boolean = true,
+    val unfocusedBorderColor: Color = Color.Transparent,
 )

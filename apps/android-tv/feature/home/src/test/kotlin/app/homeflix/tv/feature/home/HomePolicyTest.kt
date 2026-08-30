@@ -1,5 +1,6 @@
 package app.homeflix.tv.feature.home
 
+import app.homeflix.tv.core.catalog.MediaItem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -19,7 +20,7 @@ class HomePolicyTest {
         val featured = HomePolicy.rankFeatured(recommendations, resolved)
 
         assertEquals(8, featured.size)
-        assertEquals((1..8).map { rank -> "item-$rank" }, featured.map(HomeMediaItem::id))
+        assertEquals((1..8).map { rank -> "item-$rank" }, featured.map(MediaItem::id))
     }
 
     @Test
@@ -43,7 +44,7 @@ class HomePolicyTest {
         val featured = HomePolicy.rankFeatured(recommendations, mapOf("item-two" to mediaItem("item-two")))
         val nonEmptyRails = HomePolicy.nonEmptyRails(rails)
 
-        assertEquals(listOf("item-two"), featured.map(HomeMediaItem::id))
+        assertEquals(listOf("item-two"), featured.map(MediaItem::id))
         assertEquals(listOf("recent"), nonEmptyRails.map(HomeRail::id))
     }
 
@@ -123,8 +124,8 @@ private fun mediaItem(
     id: String,
     type: String = "Movie",
     seriesId: String? = null,
-): HomeMediaItem =
-    HomeMediaItem(
+): MediaItem =
+    MediaItem(
         id = id,
         name = id,
         type = type,

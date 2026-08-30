@@ -1,28 +1,10 @@
 package app.homeflix.tv.feature.home
 
+import app.homeflix.tv.core.catalog.MediaItem
+
 data class HomeRecommendation(
     val itemId: String,
     val rank: Int,
-)
-
-data class HomeMediaItem(
-    val id: String,
-    val name: String,
-    val type: String,
-    val seriesId: String?,
-    val year: Int?,
-    val overview: String?,
-    val genres: List<String>,
-    val primaryImageUrl: String?,
-    val backdropImageUrl: String?,
-    val playedPercentage: Float?,
-    val seriesName: String? = null,
-    val indexNumber: Int? = null,
-    val parentIndexNumber: Int? = null,
-    val runTimeTicks: Long? = null,
-    val playbackPositionTicks: Long? = null,
-    val officialRating: String? = null,
-    val communityRating: Float? = null,
 )
 
 enum class HomeRailVariant {
@@ -33,12 +15,12 @@ enum class HomeRailVariant {
 data class HomeRail(
     val id: String,
     val title: String,
-    val items: List<HomeMediaItem>,
+    val items: List<MediaItem>,
     val variant: HomeRailVariant,
 )
 
 data class HomeContent(
-    val featured: List<HomeMediaItem>,
+    val featured: List<MediaItem>,
     val rails: List<HomeRail>,
 )
 

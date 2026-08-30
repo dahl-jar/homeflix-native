@@ -21,6 +21,8 @@ val pitestTargets =
                 "app.homeflix.tv.feature.auth.PinInputReducer",
             ).joinToString(","),
         ":core:session" to "app.homeflix.tv.core.session.SessionPayloadCodec",
+        ":feature:detail" to "app.homeflix.tv.feature.detail.DetailFormatKt",
+        ":feature:profile" to "app.homeflix.tv.feature.profile.ProfileDetailsKt",
         ":feature:home" to
             listOf(
                 "app.homeflix.tv.feature.home.HomeContract",

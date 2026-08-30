@@ -4,12 +4,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.feature.auth.AuthGateway
 import app.homeflix.tv.feature.auth.AuthProfile
 import app.homeflix.tv.feature.auth.AuthenticatedUser
 import app.homeflix.tv.feature.home.HomeContent
 import app.homeflix.tv.feature.home.HomeGateway
-import app.homeflix.tv.feature.home.HomeMediaItem
 import org.junit.Rule
 import org.junit.Test
 
@@ -53,7 +53,7 @@ private class AppHomeGateway : HomeGateway {
         HomeContent(
             featured =
                 listOf(
-                    HomeMediaItem(
+                    MediaItem(
                         id = "featured-one",
                         name = "Featured One",
                         type = "Movie",

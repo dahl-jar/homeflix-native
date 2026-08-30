@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
+import app.homeflix.tv.core.catalog.LibrarySummary
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.HomeflixDimensions
 import kotlinx.coroutines.CancellationException
@@ -30,6 +31,8 @@ fun HomeScreen(
     viewer: HomeViewer,
     onMediaSelected: (String) -> Unit,
     onProfileSelected: () -> Unit,
+    libraries: List<LibrarySummary> = emptyList(),
+    onLibrarySelected: (LibrarySummary) -> Unit = {},
 ) {
     var state by remember(gateway, viewer.id) { mutableStateOf<HomeUiState>(HomeUiState.Loading) }
 
@@ -38,7 +41,7 @@ fun HomeScreen(
     }
 
     when (val current = state) {
-        HomeUiState.Loading -> HomeStatus("Loading Homeflix…", null)
+        HomeUiState.Loading -> HomeSkeleton()
         HomeUiState.Empty -> HomeStatus("Your library is ready.", "Add media to start watching")
         HomeUiState.Error -> HomeStatus("Can’t load Homeflix.", "Check the server connection")
         is HomeUiState.Content ->
@@ -47,6 +50,8 @@ fun HomeScreen(
                 viewer = viewer,
                 onMediaSelected = onMediaSelected,
                 onProfileSelected = onProfileSelected,
+                libraries = libraries,
+                onLibrarySelected = onLibrarySelected,
             )
     }
 }

@@ -8,7 +8,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixTheme
+import kotlinx.coroutines.awaitCancellation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -123,7 +125,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun shouldMoveFocusToProfileRail() {
+    fun shouldMoveFocusToNavigationRail() {
         composeRule.setContent {
             HomeflixTheme {
                 HomeCatalog(
@@ -139,6 +141,10 @@ class HomeScreenTest {
             pressKey(Key.DirectionLeft)
         }
 
+        composeRule.onNodeWithContentDescription("Home selected").assertIsFocused()
+        composeRule.onNodeWithContentDescription("Home selected").performKeyInput {
+            pressKey(Key.DirectionUp)
+        }
         composeRule.onNodeWithContentDescription("Switch profile").assertIsFocused()
     }
 
@@ -166,7 +172,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun shouldReturnFocusFromProfileToCards() {
+    fun shouldReturnFocusFromRailToCards() {
         composeRule.setContent {
             HomeflixTheme {
                 HomeCatalog(
@@ -181,8 +187,8 @@ class HomeScreenTest {
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionLeft)
         }
-        composeRule.onNodeWithContentDescription("Switch profile").assertIsFocused()
-        composeRule.onNodeWithContentDescription("Switch profile").performKeyInput {
+        composeRule.onNodeWithContentDescription("Home selected").assertIsFocused()
+        composeRule.onNodeWithContentDescription("Home selected").performKeyInput {
             pressKey(Key.DirectionRight)
         }
         composeRule.onNodeWithContentDescription("Episode One card").assertIsFocused()
@@ -190,8 +196,12 @@ class HomeScreenTest {
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionLeft)
         }
+        composeRule.onNodeWithContentDescription("Home selected").performKeyInput {
+            pressKey(Key.DirectionUp)
+        }
+        composeRule.onNodeWithContentDescription("Switch profile").assertIsFocused()
         composeRule.onNodeWithContentDescription("Switch profile").performKeyInput {
-            pressKey(Key.DirectionDown)
+            pressKey(Key.DirectionRight)
         }
         composeRule.onNodeWithContentDescription("Episode One card").assertIsFocused()
     }
@@ -302,6 +312,22 @@ class HomeScreenTest {
     }
 
     @Test
+    fun shouldShowSkeletonWhileLoading() {
+        composeRule.setContent {
+            HomeflixTheme {
+                HomeScreen(
+                    gateway = PendingHomeGateway(),
+                    viewer = viewer(),
+                    onMediaSelected = {},
+                    onProfileSelected = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Loading Homeflix").assertExists()
+    }
+
+    @Test
     fun shouldShowEmptyLibrary() {
         composeRule.setContent {
             HomeflixTheme {
@@ -332,6 +358,10 @@ class HomeScreenTest {
 
         composeRule.onNodeWithText("Can’t load Homeflix.").assertExists()
     }
+}
+
+private class PendingHomeGateway : HomeGateway {
+    override suspend fun fetchHome(userId: String): HomeContent = awaitCancellation()
 }
 
 private class FakeHomeGateway(
@@ -382,7 +412,7 @@ private fun posterRail(
         variant = HomeRailVariant.Poster,
     )
 
-private fun continueItems(): List<HomeMediaItem> {
+private fun continueItems(): List<MediaItem> {
     val ordinals = listOf("One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight")
     return ordinals.mapIndexed { index, ordinal ->
         mediaItem(
@@ -399,8 +429,8 @@ private fun mediaItem(
     name: String,
     type: String = "Movie",
     playedPercentage: Float? = null,
-): HomeMediaItem =
-    HomeMediaItem(
+): MediaItem =
+    MediaItem(
         id = id,
         name = name,
         type = type,

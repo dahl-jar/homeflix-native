@@ -1,5 +1,6 @@
 package app.homeflix.tv.feature.home
 
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.network.JsonApiClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -16,7 +17,7 @@ class HomeApiTest {
 
             val content = api.fetchHome(userId = "user-one")
 
-            assertEquals(listOf("featured-one", "featured-two"), content.featured.map(HomeMediaItem::id))
+            assertEquals(listOf("featured-one", "featured-two"), content.featured.map(MediaItem::id))
             assertEquals(
                 listOf("Continue watching", "Recently added in Movies", "Recently added in Shows"),
                 content.rails.map(HomeRail::title),

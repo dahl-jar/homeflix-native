@@ -16,4 +16,15 @@ dependencyResolutionManagement {
 
 rootProject.name = "homeflix-android-tv"
 
-include(":app", ":core:designsystem", ":core:network", ":core:session", ":feature:auth", ":feature:home")
+include(
+    ":app",
+    ":core:catalog",
+    ":core:designsystem",
+    ":core:network",
+    ":core:session",
+    ":feature:auth",
+    ":feature:detail",
+    ":feature:home",
+    ":feature:library",
+    ":feature:profile",
+)
