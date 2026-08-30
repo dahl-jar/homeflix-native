@@ -1,0 +1,18 @@
+[
+  {
+    "Name": "Darrow",
+    "Id": "user-one",
+    "PrimaryImageTag": "image-one",
+    "HasPassword": true
+  },
+  {
+    "Name": "Mustang",
+    "Id": "user-two",
+    "HasPassword": false
+  },
+  {
+    "Name": "Goblin",
+    "Id": "user-three",
+    "HasPassword": false
+  }
+]

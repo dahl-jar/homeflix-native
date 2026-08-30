@@ -1,0 +1,70 @@
+name: android-tv
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/android-tv/**"
+      - ".github/workflows/android-tv.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Lint
+        run: ./gradlew ktlintCheck detekt lintDebug
+        working-directory: apps/android-tv
+
+      - name: Test
+        run: ./gradlew testDebugUnitTest
+        working-directory: apps/android-tv
+
+  release:
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Build unsigned release
+        run: ./gradlew :app:assembleRelease
+        working-directory: apps/android-tv
+
+      - name: Compute next tag
+        id: tag
+        run: |
+          last=$(git tag -l 'android-tv-v*' | sed 's/android-tv-v//' | sort -n | tail -1)
+          next=$(( ${last:-0} + 1 ))
+          echo "name=android-tv-v${next}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: ${{ steps.tag.outputs.name }}
+          files: apps/android-tv/app/build/outputs/apk/release/app-release-unsigned.apk
