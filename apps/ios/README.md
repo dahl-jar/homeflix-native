@@ -4,15 +4,14 @@ This package expects the Jellyfin-compatible API described in the root README.
 
 ## Run
 
-Run these commands from the repository root:
-
 ```bash
-cp apps/ios/.env.example apps/ios/.env.local
+cd apps/ios
+cp .env.example .env.local
 pnpm install
 pnpm ios
 ```
 
-Set `EXPO_PUBLIC_HOMEFLIX_SERVER_URLS` in `apps/ios/.env.local` to one or more comma-separated server URLs.
+Set `EXPO_PUBLIC_HOMEFLIX_SERVER_URLS` in `.env.local` to one or more comma-separated server URLs.
 
 ```bash
 pnpm start
@@ -22,14 +21,16 @@ pnpm check
 ## Unsigned build
 
 ```bash
-pnpm --filter @homeflix/ios exec expo prebuild --platform ios
-cd apps/ios/ios && pod install && cd ../../..
+cd apps/ios
+pnpm exec expo prebuild --platform ios
+cd ios
+pod install
 xcodebuild build \
-  -workspace apps/ios/ios/Homeflix.xcworkspace \
+  -workspace Homeflix.xcworkspace \
   -scheme Homeflix \
   -configuration Release \
   -sdk iphoneos \
-  -derivedDataPath apps/ios/build \
+  -derivedDataPath ../build \
   CODE_SIGNING_ALLOWED=NO
 ```
 

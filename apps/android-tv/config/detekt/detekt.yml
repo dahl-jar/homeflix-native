@@ -1,0 +1,13 @@
+complexity:
+  LongParameterList:
+    ignoreAnnotated:
+      - Composable
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated:
+      - Composable
+
+style:
+  MagicNumber:
+    ignorePropertyDeclaration: true
