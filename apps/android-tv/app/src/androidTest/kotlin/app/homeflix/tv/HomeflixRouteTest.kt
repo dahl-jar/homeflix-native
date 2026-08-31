@@ -2,6 +2,7 @@ package app.homeflix.tv
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import app.homeflix.tv.core.catalog.MediaItem
@@ -21,7 +22,7 @@ class HomeflixRouteTest {
     fun shouldShowHomeAfterAuthentication() {
         composeRule.setContent {
             HomeflixApp(
-                serverUrls = "http://server",
+                server = "http://server",
                 authGateway = AppAuthGateway(),
                 homeGateway = AppHomeGateway(),
             )
@@ -29,9 +30,17 @@ class HomeflixRouteTest {
 
         composeRule.onNodeWithContentDescription("Darrow profile").performClick()
 
+        composeRule.waitUntil(HOME_TIMEOUT_MILLIS) {
+            composeRule
+                .onAllNodesWithContentDescription("Featured One card")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         composeRule.onNodeWithContentDescription("Featured One card").assertIsDisplayed()
     }
 }
+
+private const val HOME_TIMEOUT_MILLIS = 5_000L
 
 private class AppAuthGateway : AuthGateway {
     override suspend fun fetchPublicProfiles(): List<AuthProfile> =

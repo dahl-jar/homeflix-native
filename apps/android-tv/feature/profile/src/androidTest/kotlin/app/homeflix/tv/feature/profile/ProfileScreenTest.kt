@@ -4,6 +4,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import app.homeflix.tv.core.designsystem.HomeflixTheme
@@ -35,7 +36,20 @@ class ProfileScreenTest {
         assertTrue(signedOut)
     }
 
-    private fun setProfile(onSwitchProfile: () -> Unit) {
+    @Test
+    fun shouldChangeServer() {
+        var changed = false
+        setProfile(onSwitchProfile = {}, onChangeServer = { changed = true })
+
+        composeRule.onNodeWithContentDescription("Change server").performClick()
+
+        assertTrue(changed)
+    }
+
+    private fun setProfile(
+        onSwitchProfile: () -> Unit,
+        onChangeServer: () -> Unit = {},
+    ) {
         composeRule.setContent {
             HomeflixTheme {
                 ProfileScreen(
@@ -51,6 +65,7 @@ class ProfileScreenTest {
                     onHomeSelected = {},
                     onLibrarySelected = {},
                     onSwitchProfile = onSwitchProfile,
+                    onChangeServer = onChangeServer,
                 )
             }
         }

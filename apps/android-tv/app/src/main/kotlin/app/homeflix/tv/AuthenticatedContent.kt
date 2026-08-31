@@ -54,6 +54,7 @@ internal fun AuthenticatedContent(
     libraryGateway: LibraryGateway?,
     detailGateway: DetailGateway?,
     ioDispatcher: CoroutineDispatcher,
+    onChangeServer: () -> Unit = {},
 ) {
     var session by remember(runtime, restoredSession) { mutableStateOf(restoredSession) }
     val scope = rememberCoroutineScope()
@@ -80,6 +81,7 @@ internal fun AuthenticatedContent(
         libraryGateway = libraryGateway,
         detailGateway = detailGateway,
         ioDispatcher = ioDispatcher,
+        onChangeServer = onChangeServer,
         onSignOut = {
             scope.launch {
                 withContext(ioDispatcher) { runtime.sessionStore.clear() }
@@ -97,6 +99,7 @@ private fun SignedInContent(
     libraryGateway: LibraryGateway?,
     detailGateway: DetailGateway?,
     ioDispatcher: CoroutineDispatcher,
+    onChangeServer: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val activeSession = session
@@ -154,6 +157,7 @@ private fun SignedInContent(
         ioDispatcher = ioDispatcher,
         onDestinationSelected = { selected -> destination = selected },
         onMediaSelected = openDetail,
+        onChangeServer = onChangeServer,
         onSignOut = onSignOut,
     )
 }
@@ -262,6 +266,7 @@ private fun BaseDestination(
     ioDispatcher: CoroutineDispatcher,
     onDestinationSelected: (AuthenticatedDestination) -> Unit,
     onMediaSelected: (String) -> Unit,
+    onChangeServer: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     when (destination) {
@@ -315,6 +320,7 @@ private fun BaseDestination(
                     onDestinationSelected(AuthenticatedDestination.Library(library))
                 },
                 onSwitchProfile = onSignOut,
+                onChangeServer = onChangeServer,
                 ioDispatcher = ioDispatcher,
             )
         }

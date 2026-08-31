@@ -34,6 +34,7 @@ import androidx.tv.material3.Text
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.HomeflixDimensions
 import app.homeflix.tv.core.designsystem.HomeflixScreenBackground
+import app.homeflix.tv.core.designsystem.HomeflixWordmark
 import app.homeflix.tv.core.designsystem.TvFocusSurface
 import coil3.compose.SubcomposeAsyncImage
 
@@ -58,7 +59,7 @@ fun ProfileSelectionScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         HomeflixScreenBackground()
-        Wordmark(
+        HomeflixWordmark(
             modifier =
                 Modifier
                     .align(Alignment.TopStart)
@@ -125,18 +126,6 @@ private fun ProfileRail(
             }
         }
     }
-}
-
-@Composable
-fun Wordmark(modifier: Modifier = Modifier) {
-    Text(
-        text = "HOMEFLIX",
-        color = HomeflixColors.Focus,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Black,
-        letterSpacing = 3.sp,
-        modifier = modifier,
-    )
 }
 
 @Composable

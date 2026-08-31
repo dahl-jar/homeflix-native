@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
 const WORKFLOW_URL = new URL('../../.github/workflows/build.yml', import.meta.url);
+const ANDROID_TV_WORKFLOW_URL = new URL('../../.github/workflows/android-tv.yml', import.meta.url);
 
 function job(workflow, name, nextName = null) {
     const start = workflow.indexOf(`  ${name}:\n`);
@@ -40,6 +41,26 @@ test('should run the build workflow only for iOS and shared metadata changes', a
 
     assert.match(workflow, /push:\n    branches: \[main\]\n    paths:\n      - "apps\/ios\/\*\*"/);
     assert.doesNotMatch(workflow, /apps\/android-tv/);
+});
+
+test('should run the Android TV workflow only for Android TV changes', async () => {
+    const workflow = await readFile(ANDROID_TV_WORKFLOW_URL, 'utf8');
+
+    assert.match(workflow, /push:\n    branches: \[main\]\n    paths:\n      - "apps\/android-tv\/\*\*"/);
+    assert.doesNotMatch(workflow, /apps\/ios/);
+});
+
+test('should publish a verified signed Android TV release', async () => {
+    const workflow = await readFile(ANDROID_TV_WORKFLOW_URL, 'utf8');
+    const releaseJob = job(workflow, 'release');
+
+    assert.match(releaseJob, /permissions:\n      contents: write/);
+    assert.match(releaseJob, /ANDROID_TV_KEYSTORE_BASE64/);
+    assert.match(releaseJob, /ANDROID_TV_KEYSTORE_PASSWORD/);
+    assert.match(releaseJob, /apksigner[\s\S]* sign/);
+    assert.match(releaseJob, /apksigner[\s\S]* verify/);
+    assert.match(releaseJob, /files: apps\/android-tv\/app\/build\/outputs\/apk\/release\/app-release\.apk/);
+    assert.doesNotMatch(releaseJob, /files: .*app-release-unsigned\.apk/);
 });
 
 test('should grant workflow read-only repository access', async () => {

@@ -59,13 +59,13 @@ Optional integrations:
 
 ## Run
 
-Supply one or more comma-separated server URLs at build time. The value stays outside tracked source.
+The app asks for the server address on first launch. Enter the full URL including `http://` or `https://`; it is saved on the device until changed from the connection screen or the profile settings.
 
 ```bash
 cd apps/android-tv
 
 # build and install on a connected TV or emulator
-HOMEFLIX_SERVER_URLS=http://your-jellyfin-host:8096 ./gradlew installDebug
+./gradlew installDebug
 
 # full local quality gate
 ./gradlew ktlintCheck detekt lintDebug testDebugUnitTest assembleDebug
@@ -84,7 +84,7 @@ HOMEFLIX_SERVER_URLS=http://your-jellyfin-host:8096 ./gradlew installDebug
   :feature:profile:pitestDebug
 ```
 
-The checked-in Gradle wrapper downloads Gradle 9.4.1. Gradle also accepts `-PhomeflixServerUrls=http://your-jellyfin-host:8096`.
+The checked-in Gradle wrapper downloads Gradle 9.4.1.
 
 ## License
 

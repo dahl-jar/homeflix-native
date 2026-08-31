@@ -2,14 +2,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-fun buildConfigString(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-
-val homeflixServerUrls =
-    providers
-        .gradleProperty("homeflixServerUrls")
-        .orElse(providers.environmentVariable("HOMEFLIX_SERVER_URLS"))
-        .orElse("")
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.detekt)
@@ -28,7 +20,6 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "HOMEFLIX_SERVER_URLS", buildConfigString(homeflixServerUrls.get()))
     }
 
     buildTypes {

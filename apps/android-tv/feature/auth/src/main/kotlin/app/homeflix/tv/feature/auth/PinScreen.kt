@@ -69,7 +69,7 @@ fun PinScreen(
                 .fillMaxSize()
                 .background(HomeflixColors.Background),
     ) {
-        PinBackButton(
+        AuthBackButton(
             onClick = onBack,
             modifier =
                 Modifier
@@ -195,7 +195,7 @@ private fun PinIndicators(state: PinInputState) {
 }
 
 @Composable
-private fun PinBackButton(
+internal fun AuthBackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

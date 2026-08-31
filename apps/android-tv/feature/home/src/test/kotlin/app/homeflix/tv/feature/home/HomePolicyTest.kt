@@ -135,6 +135,24 @@ class HomePolicyTest {
     }
 
     @Test
+    fun `should keep item artwork for continue watching movies`() {
+        val movie = mediaItem(id = "movie-one")
+
+        val imageUrl = HomePolicy.cardImageUrl(HomePolicy.CONTINUE_RAIL_ID, movie)
+
+        assertEquals("http://server/Items/movie-one/Images/Primary", imageUrl)
+    }
+
+    @Test
+    fun `should fall back to episode artwork without series poster`() {
+        val episode = mediaItem(id = "episode-one", type = "Episode", seriesId = "series-one")
+
+        val imageUrl = HomePolicy.cardImageUrl(HomePolicy.CONTINUE_RAIL_ID, episode)
+
+        assertEquals("http://server/Items/episode-one/Images/Primary", imageUrl)
+    }
+
+    @Test
     fun `should keep item artwork outside continue watching`() {
         val episode =
             mediaItem(

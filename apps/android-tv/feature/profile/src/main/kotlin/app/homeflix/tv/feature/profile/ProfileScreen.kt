@@ -33,6 +33,7 @@ fun ProfileScreen(
     onHomeSelected: () -> Unit,
     onLibrarySelected: (LibrarySummary) -> Unit,
     onSwitchProfile: () -> Unit,
+    onChangeServer: () -> Unit = {},
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val contentFocusRequester = remember { FocusRequester() }
@@ -63,6 +64,7 @@ fun ProfileScreen(
             SettingsPane(
                 details = details,
                 ioDispatcher = ioDispatcher,
+                onChangeServer = onChangeServer,
                 modifier = Modifier.weight(1f),
             )
         }

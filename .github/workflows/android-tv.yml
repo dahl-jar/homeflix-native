@@ -55,6 +55,34 @@ jobs:
         run: ./gradlew :app:assembleRelease
         working-directory: apps/android-tv
 
+      - name: Decode signing key
+        env:
+          ANDROID_TV_KEYSTORE_BASE64: ${{ secrets.ANDROID_TV_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_TV_KEYSTORE_BASE64"
+          printf '%s' "$ANDROID_TV_KEYSTORE_BASE64" \
+            | base64 --decode \
+            > "$RUNNER_TEMP/homeflix-tv-release.p12"
+
+      - name: Sign release
+        env:
+          ANDROID_TV_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_TV_KEYSTORE_PASSWORD }}
+        run: |
+          test -n "$ANDROID_TV_KEYSTORE_PASSWORD"
+          apksigner=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
+          test -n "$apksigner"
+          unsigned="apps/android-tv/app/build/outputs/apk/release/app-release-unsigned.apk"
+          signed="apps/android-tv/app/build/outputs/apk/release/app-release.apk"
+          "$apksigner" sign \
+            --ks "$RUNNER_TEMP/homeflix-tv-release.p12" \
+            --ks-type PKCS12 \
+            --ks-key-alias homeflix-tv \
+            --ks-pass env:ANDROID_TV_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_TV_KEYSTORE_PASSWORD \
+            --out "$signed" \
+            "$unsigned"
+          "$apksigner" verify --verbose --print-certs "$signed"
+
       - name: Compute next tag
         id: tag
         run: |
@@ -67,4 +95,4 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           name: ${{ steps.tag.outputs.name }}
-          files: apps/android-tv/app/build/outputs/apk/release/app-release-unsigned.apk
+          files: apps/android-tv/app/build/outputs/apk/release/app-release.apk
