@@ -161,6 +161,110 @@ test('should keep advancing HLS when video-track metadata is absent', async () =
     await runtime.stop();
 });
 
+test('should activate selected server subtitle', async () => {
+    const player = fakePlayer();
+    const selectedSubtitleTrack = {
+        label: 'English · Embedded',
+        language: 'eng',
+        streamIndex: 4,
+        serverResolved: true,
+        isDefault: true
+    };
+    const accepted = acceptedSession([]);
+    accepted.context.subtitleStreamIndex = 4;
+    accepted.trackMetadata = {
+        audioTracks: [],
+        subtitleTracks: [selectedSubtitleTrack],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack
+    };
+    const runtime = createPlaybackRuntime({
+        negotiationOptions: {},
+        negotiate: async () => accepted,
+        onSnapshot: () => {},
+        player
+    });
+    const englishSecondary = { label: 'English 1', language: 'en', isDefault: false };
+    const englishDefault = { label: 'English 2', language: 'en', isDefault: true };
+
+    await runtime.start();
+    player.listeners.get('sourceLoad')({
+        duration: 100,
+        availableAudioTracks: [],
+        availableSubtitleTracks: [englishSecondary, englishDefault],
+        availableVideoTracks: []
+    });
+    player.listeners.get('subtitleTrackChange')({ subtitleTrack: englishDefault });
+
+    assert.equal(player.subtitleTrack, englishDefault);
+    assert.equal(runtime.getSnapshot().durationSeconds, 100);
+    assert.equal(runtime.getSnapshot().selectedSubtitleTrack, selectedSubtitleTrack);
+    assert.equal(runtime.getSnapshot().subtitleTracks[0].streamIndex, 4);
+    await runtime.stop();
+});
+
+test('should keep subtitles off', async () => {
+    const player = fakePlayer();
+    const accepted = acceptedSession([]);
+    accepted.trackMetadata = {
+        audioTracks: [],
+        subtitleTracks: [{
+            label: 'English · Embedded',
+            language: 'eng',
+            streamIndex: 4,
+            serverResolved: true,
+            isDefault: true
+        }],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    };
+    const runtime = createPlaybackRuntime({
+        negotiationOptions: {},
+        negotiate: async () => accepted,
+        onSnapshot: () => {},
+        player
+    });
+
+    await runtime.start();
+    player.listeners.get('sourceLoad')({
+        duration: 100,
+        availableAudioTracks: [],
+        availableSubtitleTracks: [{ label: 'English', language: 'en', isDefault: true }],
+        availableVideoTracks: []
+    });
+    player.listeners.get('subtitleTrackChange')({
+        subtitleTrack: { label: 'English', language: 'en', isDefault: true }
+    });
+
+    assert.equal(player.subtitleTrack, null);
+    assert.equal(runtime.getSnapshot().selectedSubtitleTrack, null);
+    await runtime.stop();
+});
+
+test('should preserve native subtitle selection', async () => {
+    const player = fakePlayer();
+    const nativeSubtitle = { label: 'English', language: 'en', isDefault: true };
+    player.subtitleTrack = nativeSubtitle;
+    const runtime = createPlaybackRuntime({
+        negotiationOptions: {},
+        negotiate: async () => acceptedSession([]),
+        onSnapshot: () => {},
+        player
+    });
+
+    await runtime.start();
+    player.listeners.get('sourceLoad')({
+        duration: 100,
+        availableAudioTracks: [],
+        availableSubtitleTracks: [nativeSubtitle],
+        availableVideoTracks: []
+    });
+
+    assert.equal(player.subtitleTrack, nativeSubtitle);
+    assert.deepEqual(runtime.getSnapshot().selectedSubtitleTrack, nativeSubtitle);
+    await runtime.stop();
+});
+
 test('should expose player commands without policy', async () => {
     const player = fakePlayer();
     const runtime = createPlaybackRuntime({
@@ -185,6 +289,8 @@ test('should expose player commands without policy', async () => {
     runtime.selectSubtitleTrack(subtitleTrack);
     assert.equal(player.audioTrack, audioTrack);
     assert.equal(player.subtitleTrack, subtitleTrack);
+    player.listeners.get('subtitleTrackChange')({ subtitleTrack });
+    assert.equal(runtime.getSnapshot().selectedSubtitleTrack, subtitleTrack);
     await runtime.stop();
 });
 
@@ -402,5 +508,37 @@ test('should restart at the current position for server audio and subtitle overr
     assert.equal(negotiationCalls[2].startTimeTicks, 140_000_000);
     assert.equal(runtime.getSnapshot().selectedAudioTrack.label, 'Japanese FLAC');
     assert.equal(runtime.getSnapshot().selectedSubtitleTrack.label, 'English ASS');
+    await runtime.stop();
+});
+
+test('should keep pipeline hidden for track changes', async () => {
+    const player = fakePlayer();
+    let negotiationCount = 0;
+    let signalOverride;
+    const overrideRequested = new Promise((resolve) => {
+        signalOverride = resolve;
+    });
+    const runtime = createPlaybackRuntime({
+        negotiationOptions: { startTimeTicks: 0 },
+        async negotiate(options) {
+            negotiationCount += 1;
+            options.onPipelineProgress({ type: 'resolution_started' });
+            const accepted = acceptedSession([]);
+            accepted.trackMetadata = serverTrackMetadata();
+            if (negotiationCount === 2) signalOverride();
+            return accepted;
+        },
+        onSnapshot: () => {},
+        player
+    });
+
+    await runtime.start();
+    player.listeners.get('playingChange')({ isPlaying: true });
+    const japanese = runtime.getSnapshot().audioTracks.find(({ streamIndex }) => streamIndex === 1);
+    runtime.selectAudioTrack(japanese);
+    await waitFor(overrideRequested);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.equal(runtime.getSnapshot().pipeline.visible, false);
     await runtime.stop();
 });

@@ -1,19 +1,23 @@
 import {
     isSelectableTrack,
+    playbackTrackLanguageName,
     playbackTrackLabels
 } from './playbackTrackPresentation.js';
 
 function presentationTrack(stream, label) {
-    if (!stream) return null;
     return {
         label,
         language: stream.Language ?? null,
         streamIndex: stream.Index,
-        serverResolved: true
+        serverResolved: true,
+        isDefault: stream.IsDefault === true,
+        isForced: stream.IsForced === true,
+        name: stream.DisplayTitle ?? stream.Title ?? null
     };
 }
 
 function tracks(mediaSource, type) {
+    /* Stryker disable next-line ArrayDeclaration: fallback entries are filtered by track type */
     const streams = (mediaSource.MediaStreams ?? [])
         .filter((stream) => stream.Type === type && isSelectableTrack(stream, type));
     const labels = playbackTrackLabels(streams, type);
@@ -62,6 +66,50 @@ function nativeTrackSet(nativeTracks, selectedTrack, type) {
     };
 }
 
+function trackLanguage(track) {
+    return playbackTrackLanguageName(track);
+}
+
+function trackName(track) {
+    /* Stryker disable next-line MethodExpression: both names use the same case normalization */
+    return String(track.name ?? track.label)
+        .trim()
+        .toLowerCase();
+}
+
+function trackFlag(track, name) {
+    const suffix = `${name[0].toUpperCase()}${name.slice(1)}`;
+    return Boolean(track[`is${suffix}`]);
+}
+
+export function matchingNativeSubtitleTrack(selectedServerTrack, nativeTracks) {
+    if (!selectedServerTrack?.serverResolved) return null;
+    const language = trackLanguage(selectedServerTrack);
+    if (language === 'Unknown') return null;
+    const candidates = nativeTracks
+        .filter((track) => isSelectableTrack(track, 'Subtitle'))
+        .filter((track) => trackLanguage(track) === language);
+
+    const forced = trackFlag(selectedServerTrack, 'forced');
+    const forcedCandidates = candidates.filter((track) => trackFlag(track, 'forced') === forced);
+    const preferredCandidates = forcedCandidates.length > 0
+        ? forcedCandidates
+        : candidates;
+    const isDefault = trackFlag(selectedServerTrack, 'default');
+    const defaultCandidates = preferredCandidates.filter((track) =>
+        trackFlag(track, 'default') === isDefault
+    );
+    const rankedCandidates = defaultCandidates.length > 0
+        ? defaultCandidates
+        : preferredCandidates;
+    const selectedName = trackName(selectedServerTrack);
+    const namedCandidates = rankedCandidates.filter((track) =>
+        trackName(track) === selectedName
+    );
+    if (namedCandidates.length === 1) return namedCandidates[0];
+    return rankedCandidates.length === 1 ? rankedCandidates[0] : null;
+}
+
 export function mergeNativeTrackMetadata(current, native) {
     const audio = nativeTrackSet(native.audioTracks, native.selectedAudioTrack, 'Audio');
     const subtitles = nativeTrackSet(
@@ -71,11 +119,14 @@ export function mergeNativeTrackMetadata(current, native) {
     );
     const audioAvailable = audio.tracks.length > 0;
     const subtitlesAvailable = subtitles.tracks.length > 0;
+    const serverSubtitlesAvailable = current.subtitleTracks.some((track) => track.serverResolved);
     return {
         audioTracks: audioAvailable ? audio.tracks : current.audioTracks,
-        subtitleTracks: subtitlesAvailable ? subtitles.tracks : current.subtitleTracks,
+        subtitleTracks: subtitlesAvailable && !serverSubtitlesAvailable
+            ? subtitles.tracks
+            : current.subtitleTracks,
         selectedAudioTrack: audioAvailable ? audio.selectedTrack : current.selectedAudioTrack,
-        selectedSubtitleTrack: subtitlesAvailable
+        selectedSubtitleTrack: subtitlesAvailable && !serverSubtitlesAvailable
             ? subtitles.selectedTrack
             : current.selectedSubtitleTrack
     };

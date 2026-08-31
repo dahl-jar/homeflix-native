@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+    matchingNativeSubtitleTrack,
     mergeNativeTrackMetadata,
-    playbackTrackMetadata
+    playbackTrackMetadata,
+    serverTrackSnapshot
 } from '../playbackTrackMetadata.js';
 
 test('should expose selectable server tracks with clean labels', () => {
@@ -11,7 +13,7 @@ test('should expose selectable server tracks with clean labels', () => {
         MediaStreams: [
             { Type: 'Audio', Index: 1, Language: 'jpn', Channels: 2, DisplayTitle: 'Japanese FLAC' },
             { Type: 'Audio', Index: 3, Language: 'eng', Channels: 6, DisplayTitle: 'English AAC 5.1' },
-            { Type: 'Subtitle', Index: 7, Language: 'eng', DisplayTitle: 'English ASS' }
+            { Type: 'Subtitle', Index: 7, Language: 'eng', DisplayTitle: 'English ASS', IsDefault: true }
         ]
     }, 3, 7);
 
@@ -23,6 +25,18 @@ test('should expose selectable server tracks with clean labels', () => {
     assert.equal(metadata.selectedAudioTrack.language, 'eng');
     assert.equal(metadata.selectedAudioTrack.serverResolved, true);
     assert.equal(metadata.selectedSubtitleTrack.label, 'English');
+    assert.equal(metadata.selectedSubtitleTrack.isDefault, true);
+    assert.equal(metadata.selectedSubtitleTrack.isForced, false);
+    assert.equal(metadata.selectedSubtitleTrack.name, 'English ASS');
+});
+
+test('should return empty server tracks without streams', () => {
+    assert.deepEqual(playbackTrackMetadata({}, null, null), {
+        audioTracks: [],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    });
 });
 
 test('should hide commentary tracks from both selectors', () => {
@@ -58,6 +72,8 @@ test('should keep a forced subtitle without signs or commentary', () => {
     }, 1, 5);
 
     assert.equal(metadata.subtitleTracks[0].label, 'English · Forced');
+    assert.equal(metadata.subtitleTracks[0].isForced, true);
+    assert.equal(metadata.subtitleTracks[0].isDefault, false);
     assert.equal(metadata.selectedSubtitleTrack.streamIndex, 5);
 });
 
@@ -73,6 +89,16 @@ test('should distinguish duplicate subtitle languages by delivery', () => {
         'English · Embedded',
         'English · External'
     ]);
+    assert.equal(metadata.selectedSubtitleTrack.streamIndex, 4);
+});
+
+test('should default an absent server track snapshot', () => {
+    assert.deepEqual(serverTrackSnapshot(null), {
+        audioTracks: [],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    });
 });
 
 test('should preserve server metadata when native HLS exposes no tracks', () => {
@@ -93,7 +119,12 @@ test('should preserve server metadata when native HLS exposes no tracks', () => 
 });
 
 test('should apply presentation policy to native player tracks', () => {
-    const nativeAudio = { id: 'audio-one', label: 'Japanese AAC', language: 'jpn' };
+    const nativeAudio = {
+        id: 'audio-one',
+        label: 'Japanese AAC',
+        language: 'jpn',
+        channelCount: 6
+    };
     const nativeSubtitle = { id: 'subtitle-one', label: 'English ASS', language: 'eng' };
     const result = mergeNativeTrackMetadata({
         audioTracks: [{ label: 'English', serverResolved: true }],
@@ -113,8 +144,223 @@ test('should apply presentation policy to native player tracks', () => {
         selectedSubtitleTrack: nativeSubtitle
     });
 
-    assert.deepEqual(result.audioTracks.map(({ label }) => label), ['Japanese']);
+    assert.deepEqual(result.audioTracks.map(({ label }) => label), ['Japanese · 5.1']);
     assert.deepEqual(result.subtitleTracks.map(({ label }) => label), ['English']);
     assert.equal(result.selectedAudioTrack.id, 'audio-one');
     assert.equal(result.selectedSubtitleTrack.id, 'subtitle-one');
+});
+
+test('should preserve selected native track identity', () => {
+    const german = { label: 'Deutsch', language: 'de' };
+    const result = mergeNativeTrackMetadata({
+        audioTracks: [],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    }, {
+        audioTracks: [
+            { label: 'English', language: 'en' },
+            german
+        ],
+        subtitleTracks: [],
+        selectedAudioTrack: german,
+        selectedSubtitleTrack: null
+    });
+
+    assert.equal(result.selectedAudioTrack.language, 'de');
+});
+
+test('should match a selected native track by id', () => {
+    const result = mergeNativeTrackMetadata({
+        audioTracks: [],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    }, {
+        audioTracks: [
+            { id: 'audio-one', label: 'English', language: 'en' },
+            { id: 'audio-two', label: 'Deutsch', language: 'de' }
+        ],
+        subtitleTracks: [],
+        selectedAudioTrack: { id: 'audio-two' },
+        selectedSubtitleTrack: null
+    });
+
+    assert.equal(result.selectedAudioTrack.id, 'audio-two');
+});
+
+test('should keep native selection empty without a selected track', () => {
+    const result = mergeNativeTrackMetadata({
+        audioTracks: [],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    }, {
+        audioTracks: [
+            { id: 'audio-one', label: 'English', language: 'en' }
+        ],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    });
+
+    assert.equal(result.selectedAudioTrack, null);
+});
+
+test('should preserve selected server subtitle', () => {
+    const selectedSubtitleTrack = {
+        label: 'English · Embedded',
+        language: 'eng',
+        streamIndex: 4,
+        serverResolved: true,
+        isDefault: true
+    };
+    const current = {
+        audioTracks: [],
+        subtitleTracks: [selectedSubtitleTrack],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack
+    };
+
+    const result = mergeNativeTrackMetadata(current, {
+        audioTracks: [],
+        subtitleTracks: [
+            { label: 'English', language: 'en', isDefault: true },
+            { label: 'German', language: 'de', isDefault: false }
+        ],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    });
+
+    assert.equal(result.subtitleTracks, current.subtitleTracks);
+    assert.equal(result.selectedSubtitleTrack, selectedSubtitleTrack);
+});
+
+test('should match native language default', () => {
+    const englishSigns = {
+        label: 'English Signs & Songs',
+        language: 'en-US',
+        isDefault: true
+    };
+    const englishSecondary = { label: 'English 1', language: 'en-US', isDefault: false };
+    const germanDefault = { label: 'Deutsch', language: 'de', isDefault: true };
+    const englishDefault = { label: 'English 2', language: 'en-US', isDefault: true };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'English · Embedded',
+        language: 'eng',
+        serverResolved: true,
+        isDefault: true
+    }, [englishSigns, englishSecondary, germanDefault, englishDefault]);
+
+    assert.equal(result, englishDefault);
+});
+
+test('should match native nondefault subtitle', () => {
+    const englishDefault = { label: 'English 1', language: 'en', isDefault: true };
+    const englishSecondary = { label: 'English 2', language: 'en', isDefault: false };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'English · External',
+        language: 'eng',
+        serverResolved: true,
+        isDefault: false
+    }, [englishDefault, englishSecondary]);
+
+    assert.equal(result, englishSecondary);
+});
+
+test('should match native forced subtitle', () => {
+    const english = { label: 'English', language: 'en', isForced: false };
+    const englishForced = { label: 'English Forced', language: 'en', isForced: true };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'English · Forced',
+        language: 'eng',
+        serverResolved: true,
+        isForced: true
+    }, [english, englishForced]);
+
+    assert.equal(result, englishForced);
+});
+
+test('should match native subtitle name', () => {
+    const embedded = { label: 'English', language: 'en', name: 'English Embedded' };
+    const external = { label: 'English', language: 'en', name: 'english external' };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'English · External',
+        language: 'eng',
+        name: ' English External ',
+        serverResolved: true
+    }, [embedded, external]);
+
+    assert.equal(result, external);
+});
+
+test('should reject ambiguous native subtitles', () => {
+    const englishOne = { label: 'English 1', language: 'en' };
+    const englishTwo = { label: 'English 2', language: 'en' };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'English · Embedded',
+        language: 'eng',
+        serverResolved: true
+    }, [englishOne, englishTwo]);
+
+    assert.equal(result, null);
+});
+
+test('should reject a missing server subtitle selection', () => {
+    const result = matchingNativeSubtitleTrack(null, [
+        { label: 'English', language: 'en' }
+    ]);
+
+    assert.equal(result, null);
+});
+
+test('should reject different unknown subtitle languages', () => {
+    const polish = { label: 'Polish', language: 'pol' };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'Dutch',
+        language: 'nld',
+        serverResolved: true
+    }, [polish]);
+
+    assert.equal(result, null);
+});
+
+test('should use sole language fallback', () => {
+    const english = { label: 'English', language: 'en' };
+
+    const result = matchingNativeSubtitleTrack({
+        label: 'English · Forced',
+        language: 'eng',
+        serverResolved: true,
+        isDefault: true,
+        isForced: true
+    }, [english]);
+
+    assert.equal(result, english);
+});
+
+test('should preserve native subtitle without discovery', () => {
+    const subtitleTrack = { label: 'English', language: 'en' };
+    const current = {
+        audioTracks: [],
+        subtitleTracks: [subtitleTrack],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: subtitleTrack
+    };
+
+    const result = mergeNativeTrackMetadata(current, {
+        audioTracks: [],
+        subtitleTracks: [],
+        selectedAudioTrack: null,
+        selectedSubtitleTrack: null
+    });
+
+    assert.equal(result.subtitleTracks, current.subtitleTracks);
+    assert.equal(result.selectedSubtitleTrack, subtitleTrack);
 });
