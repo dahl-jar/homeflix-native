@@ -5,21 +5,19 @@
 <h1 align="center">Homeflix</h1>
 
 <p align="center">
-  Homeflix is an iPhone video client for a self-hosted media library. It uses the Jellyfin API for the library and a small playback extension for source selection and stream preparation.
+  Native iPhone and Android TV clients for a self-hosted media library, built on the Jellyfin API.
 </p>
 
-## Stack
+## iOS
 
-React Native 0.86 · React 19 · Expo 57 · Expo Router · Expo Video · Jellyfin API
-
-## Showcase
+React Native 0.86 · React 19 · Expo 57 · Expo Router · Expo Video
 
 ### Home
 
 Recommendations, recently added media, and in-progress titles from the connected library.
 
 <p align="center">
-  <img src="docs/images/home.png" width="42%" alt="Home screen">
+  <img src="docs/images/home.png" width="42%" alt="iOS Home screen">
 </p>
 
 ### Library
@@ -27,81 +25,32 @@ Recommendations, recently added media, and in-progress titles from the connected
 The movie library supports sorting and filters for genre, decade, rating, and watch status.
 
 <p align="center">
-  <img src="docs/images/library.png" width="42%" alt="Movie library">
+  <img src="docs/images/library.png" width="42%" alt="iOS movie library">
 </p>
 
-### Movie details
+[Run and build the iOS client](apps/ios/README.md).
 
-Details combine metadata, playback actions, an overview, genres, and related titles.
+## Android TV
+
+Kotlin 2.3 · Jetpack Compose · Compose for TV · Media3
+
+### Home
+
+Continue watching, recommendations, recently added media, and a focus-driven hero for D-pad navigation.
 
 <p align="center">
-  <img src="docs/images/movie-detail.png" width="42%" alt="Movie details">
+  <img src="apps/android-tv/docs/images/home.png" width="92%" alt="Android TV Home screen">
 </p>
 
-### Playback pipeline
+### Library
 
-The pipeline view follows the stages reported for the current playback request, then hands the playable stream to the native player.
+Libraries support sorting and filters for genre, decade, rating, and watch status in a paged poster grid.
 
 <p align="center">
-  <img src="docs/images/pipeline.png" width="42%" alt="Playback pipeline">
+  <img src="apps/android-tv/docs/images/library.png" width="92%" alt="Android TV Shows library">
 </p>
 
-### Player
-
-The native player handles seeking, play and pause, screen fit, control locking, audio, subtitles, and next-episode playback.
-
-<p align="center">
-  <img src="docs/images/player.png" width="92%" alt="Landscape player with controls visible">
-</p>
-
-### Episodes
-
-The episode picker shows the current and following episodes with artwork, runtime, and summaries without leaving playback.
-
-<p align="center">
-  <img src="docs/images/episodes.png" width="92%" alt="Landscape episode selector">
-</p>
-
-## Requirements
-
-- A Jellyfin-compatible backend with the playback extension below
-
-- Network access from the iPhone to the backend
-
-- An iOS signing and sideloading setup
-
-### Server API
-
-Homeflix uses the standard Jellyfin API for sign-in, browsing, artwork, episodes, skip segments, and playback sessions. The backend can be a Jellyfin fork, plugin, or adapter.
-
-Playback adds a small extension to `POST /Items/{itemId}/PlaybackInfo` so the backend can select and return a playable source. It may return the source immediately; loading stages are optional.
-
-Optional integrations:
-
-- **Home and Search feed:** `GET /HomeFlix/Recommendations` supplies ranked `{ ItemId, Rank }` entries. Another feed can be selected in `apps/ios/src/api/recommendations/recommendations.js`.
-
-- **Catalog search:** Extend `/Items` with another server-managed catalog. Opening a result must return a normal Jellyfin item from `GET /Users/{userId}/Items/{itemId}` so its details can load.
-
-- **Loading stages:** `GET /Playback/PipelineProgress` shows detailed preparation progress. Without it, the app shows a general loading state.
-
-- **Bug monitoring:** `POST /ClientLog/PlaybackPipeline` records source and track selection, player state, and failures. Reporting failures do not stop playback.
-
-## Run
-
-Create the ignored local configuration file, then add one or more comma-separated server URLs to `EXPO_PUBLIC_HOMEFLIX_SERVER_URLS`.
-
-```bash
-cd apps/ios
-cp .env.example .env.local
-pnpm install
-pnpm ios
-
-pnpm check
-```
-
-## Sideload
-
-The build workflow produces an unsigned `Homeflix.ipa` from `main`. Sign and install it with an iOS sideloading tool. Local build steps are in the [iOS README](apps/ios/README.md).
+[Run and build the Android TV client](apps/android-tv/README.md).
 
 ## License
 
