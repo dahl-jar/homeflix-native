@@ -19,7 +19,7 @@ test('should run lint test and build jobs in sequence', async () => {
     assert.match(lintJob, /run: pnpm lint\n        working-directory: apps\/ios/);
     assert.match(lintJob, /run: pnpm typecheck\n        working-directory: apps\/ios/);
     assert.match(testJob, /needs: lint/);
-    assert.match(testJob, /run: node --test "scripts\/\*\*\/\*\.test\.mjs"/);
+    assert.match(testJob, /run: node --test "scripts\/\*\*\/\*\.test\.\*"/);
     assert.match(testJob, /run: pnpm test\n        working-directory: apps\/ios/);
     assert.match(testJob, /run: pnpm dup\n        working-directory: apps\/ios/);
     assert.match(testJob, /run: pnpm audit --audit-level=low\n        working-directory: apps\/ios/);

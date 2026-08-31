@@ -9,6 +9,14 @@ on:
       - ".github/workflows/build.yml"
       - "LICENSE"
       - "NOTICE.md"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/ios/**"
+      - "scripts/**"
+      - ".github/workflows/build.yml"
+      - "LICENSE"
+      - "NOTICE.md"
   workflow_dispatch:
 
 permissions:
@@ -16,7 +24,6 @@ permissions:
 
 jobs:
   lint:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -60,7 +67,7 @@ jobs:
         working-directory: apps/ios
 
       - name: Test repository metadata
-        run: node --test "scripts/**/*.test.mjs"
+        run: node --test "scripts/**/*.test.*"
 
       - name: Test iOS
         run: pnpm test
@@ -75,6 +82,7 @@ jobs:
         working-directory: apps/ios
 
   build:
+    if: github.event_name != 'pull_request'
     needs: test
     runs-on: macos-26
     steps:
