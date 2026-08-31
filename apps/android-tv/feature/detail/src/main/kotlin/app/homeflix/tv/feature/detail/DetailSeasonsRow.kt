@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,9 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -37,8 +34,8 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
+import app.homeflix.tv.core.designsystem.TvCardImage
 import app.homeflix.tv.core.designsystem.TvFocusSurface
-import coil3.compose.SubcomposeAsyncImage
 
 @Composable
 internal fun DetailSeasonsRow(
@@ -133,7 +130,7 @@ private fun EpisodeCard(
             onClick = onClick,
             modifier = Modifier.size(EPISODE_WIDTH, EPISODE_HEIGHT),
         ) {
-            EpisodeThumb(episode)
+            TvCardImage(episode.primaryImageUrl ?: episode.backdropImageUrl)
         }
         Spacer(Modifier.height(EPISODE_TITLE_SPACING))
         Text(
@@ -151,37 +148,6 @@ private fun EpisodeCard(
             )
         }
     }
-}
-
-@Composable
-private fun EpisodeThumb(episode: MediaItem) {
-    val imageUrl = episode.primaryImageUrl ?: episode.backdropImageUrl
-    if (imageUrl == null) {
-        ThumbFallback()
-        return
-    }
-    SubcomposeAsyncImage(
-        model = imageUrl,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        loading = { ThumbFallback() },
-        error = { ThumbFallback() },
-        modifier = Modifier.fillMaxSize(),
-    )
-}
-
-@Composable
-private fun ThumbFallback() {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(HomeflixColors.AvatarStart, HomeflixColors.AvatarEnd),
-                    ),
-                ),
-    )
 }
 
 private val TAB_SPACING = 14.dp

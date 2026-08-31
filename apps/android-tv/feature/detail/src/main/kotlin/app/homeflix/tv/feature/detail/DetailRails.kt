@@ -1,12 +1,10 @@
 package app.homeflix.tv.feature.detail
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,8 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,8 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
+import app.homeflix.tv.core.designsystem.TvCardImage
 import app.homeflix.tv.core.designsystem.TvFocusSurface
-import coil3.compose.SubcomposeAsyncImage
 
 @Composable
 internal fun DetailPosterRail(
@@ -102,7 +98,7 @@ private fun PosterCard(
         onClick = onClick,
         modifier = Modifier.size(POSTER_WIDTH, POSTER_HEIGHT),
     ) {
-        DetailRailImage(item.primaryImageUrl ?: item.backdropImageUrl)
+        TvCardImage(item.primaryImageUrl ?: item.backdropImageUrl)
     }
 }
 
@@ -118,7 +114,7 @@ private fun CastCard(person: CastMember) {
                     .size(CAST_IMAGE_SIZE)
                     .clip(CircleShape),
         ) {
-            DetailRailImage(person.imageUrl)
+            TvCardImage(person.imageUrl)
         }
         Spacer(Modifier.height(CAST_NAME_SPACING))
         Text(
@@ -130,36 +126,6 @@ private fun CastCard(person: CastMember) {
             textAlign = TextAlign.Center,
         )
     }
-}
-
-@Composable
-private fun DetailRailImage(imageUrl: String?) {
-    if (imageUrl == null) {
-        RailImageFallback()
-        return
-    }
-    SubcomposeAsyncImage(
-        model = imageUrl,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        loading = { RailImageFallback() },
-        error = { RailImageFallback() },
-        modifier = Modifier.fillMaxSize(),
-    )
-}
-
-@Composable
-private fun RailImageFallback() {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(HomeflixColors.AvatarStart, HomeflixColors.AvatarEnd),
-                    ),
-                ),
-    )
 }
 
 private val TITLE_ROW_SPACING = 10.dp
