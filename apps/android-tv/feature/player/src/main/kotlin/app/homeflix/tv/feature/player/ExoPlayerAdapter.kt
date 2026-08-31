@@ -45,7 +45,7 @@ class ExoPlayerAdapter(
 
                 override fun onPlayerError(error: PlaybackException) {
                     if (disposed) return
-                    callbacks.onError(error.errorCodeName)
+                    callbacks.onError(playerErrorDetails(error))
                 }
             }
         player.addListener(listener)

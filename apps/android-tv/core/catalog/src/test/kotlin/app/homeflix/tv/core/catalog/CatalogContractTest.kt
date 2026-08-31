@@ -109,6 +109,29 @@ class CatalogContractTest {
     }
 
     @Test
+    fun `should expose series poster beside episode artwork`() {
+        val payload =
+            """
+            {"Items":[{
+                "Id":"episode-one","Name":"Episode","Type":"Episode",
+                "SeriesId":"series-one","SeriesPrimaryImageTag":"series-tag",
+                "ImageTags":{"Primary":"episode-tag"}
+            }]}
+            """.trimIndent()
+
+        val item = CatalogContract.items(Json, "http://server", payload).single()
+
+        assertEquals(
+            "http://server/Items/episode-one/Images/Primary?tag=episode-tag&maxWidth=440&quality=90",
+            item.primaryImageUrl,
+        )
+        assertEquals(
+            "http://server/Items/series-one/Images/Primary?tag=series-tag&maxWidth=440&quality=90",
+            item.seriesPrimaryImageUrl,
+        )
+    }
+
+    @Test
     fun `should map hero metadata fields`() {
         val payload =
             """

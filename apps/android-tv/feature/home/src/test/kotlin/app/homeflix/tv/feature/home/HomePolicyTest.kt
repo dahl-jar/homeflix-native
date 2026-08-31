@@ -118,12 +118,43 @@ class HomePolicyTest {
         assertEquals("movie-two", HomePolicy.selectionId(mediaItem("movie-two", seriesId = "series-two")))
         assertEquals("episode-two", HomePolicy.selectionId(mediaItem("episode-two", type = "Episode", seriesId = "")))
     }
+
+    @Test
+    fun `should use series poster for continue watching episodes`() {
+        val episode =
+            mediaItem(
+                id = "episode-one",
+                type = "Episode",
+                seriesId = "series-one",
+                seriesPrimaryImageUrl = "http://server/Items/series-one/Images/Primary",
+            )
+
+        val imageUrl = HomePolicy.cardImageUrl(HomePolicy.CONTINUE_RAIL_ID, episode)
+
+        assertEquals("http://server/Items/series-one/Images/Primary", imageUrl)
+    }
+
+    @Test
+    fun `should keep item artwork outside continue watching`() {
+        val episode =
+            mediaItem(
+                id = "episode-one",
+                type = "Episode",
+                seriesId = "series-one",
+                seriesPrimaryImageUrl = "http://server/Items/series-one/Images/Primary",
+            )
+
+        val imageUrl = HomePolicy.cardImageUrl("recent", episode)
+
+        assertEquals("http://server/Items/episode-one/Images/Primary", imageUrl)
+    }
 }
 
 private fun mediaItem(
     id: String,
     type: String = "Movie",
     seriesId: String? = null,
+    seriesPrimaryImageUrl: String? = null,
 ): MediaItem =
     MediaItem(
         id = id,
@@ -136,4 +167,5 @@ private fun mediaItem(
         primaryImageUrl = "http://server/Items/$id/Images/Primary",
         backdropImageUrl = "http://server/Items/$id/Images/Backdrop/0",
         playedPercentage = null,
+        seriesPrimaryImageUrl = seriesPrimaryImageUrl,
     )

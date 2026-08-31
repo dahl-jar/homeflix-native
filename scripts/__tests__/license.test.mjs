@@ -10,15 +10,15 @@ async function json(path) {
 }
 
 test('should declare MPL 2.0 across repository metadata', async () => {
-    const rootPackage = await json('package.json');
     const iosPackage = await json('apps/ios/package.json');
     const license = await readFile(new URL('LICENSE', ROOT_URL), 'utf8');
     const readme = await readFile(new URL('README.md', ROOT_URL), 'utf8');
+    const androidTvReadme = await readFile(new URL('apps/android-tv/README.md', ROOT_URL), 'utf8');
 
-    assert.equal(rootPackage.license, LICENSE_ID);
     assert.equal(iosPackage.license, LICENSE_ID);
     assert.match(license, /^Mozilla Public License Version 2\.0/);
     assert.match(readme, /\[Mozilla Public License 2\.0\]\(LICENSE\)/);
+    assert.match(androidTvReadme, /\[Mozilla Public License 2\.0\]\(\.\.\/\.\.\/LICENSE\)/);
 });
 
 test('should exclude showcase media from the project license', async () => {

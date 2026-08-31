@@ -1,75 +1,91 @@
-# Android TV
+<p align="center">
+  <img src="../ios/assets/icon.png" width="112" alt="Homeflix">
+</p>
 
-Homeflix for Android TV is a native Kotlin and Jetpack Compose application. It
-builds independently from the Expo iOS application and shares no runtime or
-package dependencies with the phone clients.
+<h1 align="center">Homeflix for Android TV</h1>
 
-## Structure
+<p align="center">
+  Homeflix is a native Android TV client for a self-hosted media library. It uses the Jellyfin API for browsing and sessions, plus a small playback extension for source selection and stream preparation.
+</p>
 
-```text
-app/                 thin launcher and application composition
-core/designsystem/   TV theme, dimensions, and focus visuals
-core/network/        Jellyfin transport, server probing, and identity headers
-core/session/        encrypted authentication session storage and validation
-feature/auth/        profile selection, PIN input, and auth UI state
-feature/home/        Home API mapping, policies, and D-pad Compose UI
-```
+## Stack
 
-Each feature owns its `src/main`, `src/test`, and `src/androidTest` source sets.
-Features can depend on named core modules but do not import sibling features.
-The app module composes features and owns top-level navigation.
+Kotlin 2.3 · Jetpack Compose · Compose for TV · Media3 · Jellyfin API
+
+## Showcase
+
+### Home
+
+Home combines continue watching, recommendations, recently added media, and a focus-driven hero built for D-pad navigation.
+
+<p align="center">
+  <img src="docs/images/home.png" width="92%" alt="Android TV Home screen">
+</p>
+
+### Library
+
+Libraries support sorting and filters for genre, decade, rating, and watch status in a paged poster grid.
+
+<p align="center">
+  <img src="docs/images/library.png" width="92%" alt="Android TV Shows library">
+</p>
+
+### Details
+
+Details include metadata, playback actions, seasons, episodes, trailers, and watch-state controls.
+
+<p align="center">
+  <img src="docs/images/detail.png" width="92%" alt="Android TV series details">
+</p>
 
 ## Requirements
 
-- JDK 17 or newer for running Gradle
-- Android SDK Platform 37 with minimum device API 23
+- A Jellyfin-compatible backend with the playback extension below
+- Android TV 8.0 or newer (API 26)
+- JDK 17 and Android SDK Platform 37 for local builds
 - Android SDK Build-Tools 36.0.0
-- An Android TV device or emulator for connected tests
 
-The checked-in Gradle wrapper downloads Gradle 9.4.1. `local.properties` holds
-the local Android SDK path and stays outside Git.
+### Server API
 
-## Server configuration
+Homeflix uses the standard Jellyfin API for sign-in, libraries, artwork, episodes, skip segments, and playback sessions. The backend can be a Jellyfin fork, plugin, or adapter.
 
-The app probes the Jellyfin server candidates supplied at build time. Separate
-multiple addresses with commas:
+Playback adds a small extension to `POST /Items/{itemId}/PlaybackInfo` so the backend can select and return a playable source. It may return the source immediately; loading stages are optional.
 
-```sh
-HOMEFLIX_SERVER_URLS=http://your-jellyfin-host:8096 pnpm android-tv:install
-```
+Optional integrations:
 
-Gradle can receive the same value directly:
+- **Featured feed:** `GET /HomeFlix/Recommendations` supplies ranked `{ ItemId, Rank }` entries.
+- **Loading stages:** `GET /Playback/PipelineProgress` reports preparation progress before Media3 receives the stream.
+- **Bug monitoring:** `POST /ClientLog/PlaybackPipeline` records source selection, player state, and failures. Reporting failures do not stop playback.
 
-```sh
+## Run
+
+Supply one or more comma-separated server URLs at build time. The value stays outside tracked source.
+
+```bash
 cd apps/android-tv
-./gradlew -PhomeflixServerUrls=http://your-jellyfin-host:8096 installDebug
+
+# build and install on a connected TV or emulator
+HOMEFLIX_SERVER_URLS=http://your-jellyfin-host:8096 ./gradlew installDebug
+
+# full local quality gate
+./gradlew ktlintCheck detekt lintDebug testDebugUnitTest assembleDebug
+
+# connected Compose tests
+./gradlew connectedDebugAndroidTest
+
+# scoped PIT mutation tests
+./gradlew \
+  :core:designsystem:pitestDebug \
+  :core:network:pitestDebug \
+  :core:session:pitestDebug \
+  :feature:auth:pitestDebug \
+  :feature:detail:pitestDebug \
+  :feature:home:pitestDebug \
+  :feature:profile:pitestDebug
 ```
 
-No server address or account data is stored in tracked source.
+The checked-in Gradle wrapper downloads Gradle 9.4.1. Gradle also accepts `-PhomeflixServerUrls=http://your-jellyfin-host:8096`.
 
-## Commands
+## License
 
-Run from the repository root:
-
-```sh
-pnpm android-tv:check
-pnpm android-tv:build
-pnpm android-tv:install
-pnpm android-tv:connected-test
-pnpm android-tv:mutation
-```
-
-The check command runs ktlint, detekt with Android type resolution, Android
-Lint, JVM tests, and the debug build. The mutation command runs scoped PIT
-audits for design-system, network, session, auth, and Home policy and mapping
-logic. The connected tests exercise focus, authentication, encrypted session
-storage, Home navigation, and app routing on an emulator or device.
-
-The app probes Jellyfin, renders every public profile returned by the API, and
-authenticates passwordless or PIN-protected profiles. Successful sessions are
-encrypted with Android Keystore and restored only after server validation.
-
-Home follows the iOS application contract for recommendations, resume items,
-user views, and recently added media. Its television layout uses a focus-driven
-hero, horizontal media rails, visible playback progress, and D-pad selection.
-Details and playback are the next feature boundary.
+Homeflix source code is available under the [Mozilla Public License 2.0](../../LICENSE). Showcase media is covered by [NOTICE](../../NOTICE.md).

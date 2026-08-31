@@ -18,4 +18,5 @@ data class MediaItem(
     val playbackPositionTicks: Long? = null,
     val officialRating: String? = null,
     val communityRating: Float? = null,
+    val seriesPrimaryImageUrl: String? = null,
 )

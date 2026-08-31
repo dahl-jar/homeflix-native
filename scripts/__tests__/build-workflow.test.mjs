@@ -16,12 +16,30 @@ test('should run lint test and build jobs in sequence', async () => {
     const testJob = job(workflow, 'test', 'build');
     const buildJob = job(workflow, 'build');
 
-    assert.match(lintJob, /run: pnpm lint/);
+    assert.match(lintJob, /run: pnpm lint\n        working-directory: apps\/ios/);
+    assert.match(lintJob, /run: pnpm typecheck\n        working-directory: apps\/ios/);
     assert.match(testJob, /needs: lint/);
-    assert.match(testJob, /run: pnpm test/);
-    assert.match(testJob, /run: pnpm dup/);
-    assert.match(testJob, /run: pnpm audit --audit-level=low/);
+    assert.match(testJob, /run: node --test "scripts\/\*\*\/\*\.test\.mjs"/);
+    assert.match(testJob, /run: pnpm test\n        working-directory: apps\/ios/);
+    assert.match(testJob, /run: pnpm dup\n        working-directory: apps\/ios/);
+    assert.match(testJob, /run: pnpm audit --audit-level=low\n        working-directory: apps\/ios/);
     assert.match(buildJob, /needs: test/);
+});
+
+test('should install iOS dependencies from the iOS project', async () => {
+    const workflow = await readFile(WORKFLOW_URL, 'utf8');
+
+    assert.equal(
+        workflow.match(/run: pnpm install --frozen-lockfile\n        working-directory: apps\/ios/g)?.length,
+        3
+    );
+});
+
+test('should run the build workflow only for iOS and shared metadata changes', async () => {
+    const workflow = await readFile(WORKFLOW_URL, 'utf8');
+
+    assert.match(workflow, /push:\n    branches: \[main\]\n    paths:\n      - "apps\/ios\/\*\*"/);
+    assert.doesNotMatch(workflow, /apps\/android-tv/);
 });
 
 test('should grant workflow read-only repository access', async () => {

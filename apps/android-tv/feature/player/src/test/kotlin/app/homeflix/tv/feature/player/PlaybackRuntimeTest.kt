@@ -2,6 +2,8 @@ package app.homeflix.tv.feature.player
 
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -64,7 +66,20 @@ class PlaybackRuntimeTest {
             fixture.bindings
                 .single()
                 .callbacks
-                .onError("decoder failed")
+                .onError(
+                    PlayerErrorDetails(
+                        reason = "ERROR_CODE_DECODING_FAILED",
+                        telemetry =
+                            mapOf(
+                                "errorType" to "MediaCodecVideoDecoderException",
+                                "errorCode" to 4_003,
+                                "errorName" to "ERROR_CODE_DECODING_FAILED",
+                                "errorMessage" to
+                                    "renderer=MediaCodecVideoRenderer; decoder=c2.android.hevc.decoder; " +
+                                    "diagnostic=android.media.MediaCodec.error_neg_2147483648",
+                            ),
+                    ),
+                )
             runCurrent()
 
             assertEquals(2, fixture.negotiations.size)
@@ -72,6 +87,20 @@ class PlaybackRuntimeTest {
             assertTrue(fixture.bindings.first().disposed)
             assertEquals(2, fixture.bindings.size)
             assertEquals(2, fixture.runtime.snapshot.value.pipeline.attempt)
+            val failureEvent =
+                fixture.telemetryEvents.single { event ->
+                    event["event"]?.jsonPrimitive?.content == "player_failed"
+                }
+            assertEquals("MediaCodecVideoDecoderException", failureEvent.getValue("errorType").jsonPrimitive.content)
+            assertEquals(4_003, failureEvent.getValue("errorCode").jsonPrimitive.int)
+            assertEquals("ERROR_CODE_DECODING_FAILED", failureEvent.getValue("errorName").jsonPrimitive.content)
+            assertTrue(
+                failureEvent
+                    .getValue("errorMessage")
+                    .jsonPrimitive.content
+                    .contains("c2.android.hevc.decoder"),
+            )
+            assertEquals(0, failureEvent.getValue("elapsedMs").jsonPrimitive.int)
         }
 
     @Test
@@ -89,7 +118,7 @@ class PlaybackRuntimeTest {
             fixture.bindings
                 .single()
                 .callbacks
-                .onError("decoder failed")
+                .onError(PlayerErrorDetails(reason = "decoder failed"))
             runCurrent()
 
             val snapshot = fixture.runtime.snapshot.value
@@ -187,11 +216,14 @@ private class RuntimeFixture(
     val negotiations = mutableListOf<NegotiationRequest>()
     val bindings = mutableListOf<FakeBinding>()
     val sessionGateway = CallRecordingSessionGateway()
+    val telemetryEvents = mutableListOf<kotlinx.serialization.json.JsonObject>()
     var failNextNegotiation = false
 
     private val telemetryGateway =
         object : TelemetryGateway {
-            override suspend fun logPipelineEvent(payload: kotlinx.serialization.json.JsonObject) = Unit
+            override suspend fun logPipelineEvent(payload: kotlinx.serialization.json.JsonObject) {
+                telemetryEvents.add(payload)
+            }
         }
 
     private val pipeline =

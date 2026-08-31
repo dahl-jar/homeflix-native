@@ -74,6 +74,7 @@ internal fun HomeMediaRail(
                 ) { index, item ->
                     MediaCard(
                         item = item,
+                        imageUrl = HomePolicy.cardImageUrl(rail.id, item),
                         dimensions = cardDimensions(rail.variant, featured),
                         onFocused = { onFocused(item) },
                         onClick = { onMediaSelected(HomePolicy.selectionId(item)) },
@@ -93,6 +94,7 @@ internal fun HomeMediaRail(
 @Composable
 private fun MediaCard(
     item: MediaItem,
+    imageUrl: String?,
     dimensions: CardDimensions,
     onFocused: () -> Unit,
     onClick: () -> Unit,
@@ -100,7 +102,7 @@ private fun MediaCard(
 ) {
     TvMediaCard(
         name = item.name,
-        imageUrl = item.primaryImageUrl ?: item.backdropImageUrl,
+        imageUrl = imageUrl,
         playedPercentage = item.playedPercentage,
         contentDescription = "${item.name} card",
         onClick = onClick,

@@ -76,14 +76,16 @@ object CatalogContract {
         item: ItemDto,
     ): MediaItem {
         val normalizedBaseUrl = baseUrl.trimEnd('/')
-        val primaryOwnerId = if (item.imageTags[PRIMARY_IMAGE] != null) item.id else item.seriesId
-        val primaryTag = item.imageTags[PRIMARY_IMAGE] ?: item.seriesPrimaryImageTag
-        val primaryUrl =
-            if (primaryOwnerId != null && primaryTag != null) {
-                imageUrl(normalizedBaseUrl, primaryOwnerId, "Primary", primaryTag, POSTER_WIDTH)
+        val seriesPrimaryUrl =
+            if (item.seriesId != null && item.seriesPrimaryImageTag != null) {
+                imageUrl(normalizedBaseUrl, item.seriesId, "Primary", item.seriesPrimaryImageTag, POSTER_WIDTH)
             } else {
                 null
             }
+        val primaryUrl =
+            item.imageTags[PRIMARY_IMAGE]?.let { primaryTag ->
+                imageUrl(normalizedBaseUrl, item.id, "Primary", primaryTag, POSTER_WIDTH)
+            } ?: seriesPrimaryUrl
         val backdropUrl =
             item.backdropImageTags.firstOrNull()?.let { backdropTag ->
                 imageUrl(normalizedBaseUrl, item.id, "Backdrop/0", backdropTag, BACKDROP_WIDTH)
@@ -107,6 +109,7 @@ object CatalogContract {
             playbackPositionTicks = item.userData?.playbackPositionTicks,
             officialRating = item.officialRating,
             communityRating = item.communityRating,
+            seriesPrimaryImageUrl = seriesPrimaryUrl,
         )
     }
 

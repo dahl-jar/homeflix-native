@@ -18,24 +18,30 @@ async function exists(relativePath) {
     }
 }
 
-test('should keep each native application in its own workspace root', async () => {
-    const rootPackage = await readJson('package.json');
+test('should keep each native application in its own project root', async () => {
     const iosPackage = await readJson('apps/ios/package.json');
     const iosLayout = await readFile(new URL('apps/ios/app/_layout.js', ROOT_URL), 'utf8');
     const androidMarker = await readFile(new URL('apps/android/README.md', ROOT_URL), 'utf8');
     const androidTvMarker = await readFile(new URL('apps/android-tv/README.md', ROOT_URL), 'utf8');
 
-    assert.equal(rootPackage.scripts.start, 'pnpm --filter @homeflix/ios start');
-    assert.equal(rootPackage.dependencies, undefined);
+    assert.equal(await exists('package.json'), false);
+    assert.equal(await exists('pnpm-lock.yaml'), false);
+    assert.equal(await exists('pnpm-workspace.yaml'), false);
+    assert.equal(await exists('.npmrc'), false);
+    assert.equal(await exists('patches'), false);
+    assert.equal(await exists('apps/ios/pnpm-lock.yaml'), true);
+    assert.equal(await exists('apps/ios/pnpm-workspace.yaml'), true);
+    assert.equal(await exists('apps/ios/.npmrc'), true);
     assert.equal(iosPackage.name, '@homeflix/ios');
     assert.equal(iosPackage.main, 'expo-router/entry');
+    assert.equal(iosPackage.scripts.start, 'expo start');
+    assert.equal(iosPackage.scripts.ios, 'expo run:ios');
     assert.match(iosLayout, /export default function RootLayout/);
     assert.match(androidMarker, /^# Android$/m);
-    assert.match(androidTvMarker, /^# Android TV$/m);
+    assert.match(androidTvMarker, /<h1 align="center">Homeflix for Android TV<\/h1>/);
 });
 
 test('should keep Android TV as an independent native application', async () => {
-    const rootPackage = await readJson('package.json');
     const settings = await readFile(new URL('apps/android-tv/settings.gradle.kts', ROOT_URL), 'utf8');
     const modules = [
         ':app',
@@ -55,10 +61,7 @@ test('should keep Android TV as an independent native application', async () => 
         .map((module) => `apps/android-tv/${module.slice(1).replace(':', '/')}/build.gradle.kts`)
         .concat('apps/android-tv/app/build.gradle.kts');
 
-    assert.equal(rootPackage.scripts['android-tv:build'], 'cd apps/android-tv && ./gradlew assembleDebug');
-    assert.equal(rootPackage.scripts['android-tv:install'], 'cd apps/android-tv && ./gradlew installDebug');
-    assert.equal(rootPackage.scripts['android-tv:lint'], 'cd apps/android-tv && ./gradlew ktlintCheck detekt lintDebug');
-    assert.equal(rootPackage.scripts['android-tv:test'], 'cd apps/android-tv && ./gradlew testDebugUnitTest');
+    assert.equal(await exists('apps/android-tv/gradlew'), true);
     for (const module of modules) {
         assert.match(settings, new RegExp(`"${module}",`));
     }

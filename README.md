@@ -91,7 +91,8 @@ Optional integrations:
 Create the ignored local configuration file, then add one or more comma-separated server URLs to `EXPO_PUBLIC_HOMEFLIX_SERVER_URLS`.
 
 ```bash
-cp apps/ios/.env.example apps/ios/.env.local
+cd apps/ios
+cp .env.example .env.local
 pnpm install
 pnpm ios
 

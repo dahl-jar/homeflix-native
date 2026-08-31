@@ -28,6 +28,16 @@ object HomePolicy {
 
     fun selectionId(item: MediaItem): String = item.episodeSeriesId() ?: item.id
 
+    fun cardImageUrl(
+        railId: String,
+        item: MediaItem,
+    ): String? =
+        if (railId == CONTINUE_RAIL_ID && item.isEpisode()) {
+            item.seriesPrimaryImageUrl ?: item.primaryImageUrl ?: item.backdropImageUrl
+        } else {
+            item.primaryImageUrl ?: item.backdropImageUrl
+        }
+
     private fun MediaItem.episodeSeriesId(): String? = seriesId.takeIf { isEpisode() && !it.isNullOrBlank() }
 
     private fun MediaItem.isEpisode(): Boolean = type == "Episode"

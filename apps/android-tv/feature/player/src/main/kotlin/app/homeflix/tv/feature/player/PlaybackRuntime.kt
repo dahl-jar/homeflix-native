@@ -56,7 +56,7 @@ interface PlayerCallbacks {
 
     fun onEnded()
 
-    fun onError(reason: String)
+    fun onError(error: PlayerErrorDetails)
 }
 
 interface PlayerBinding {
@@ -331,13 +331,16 @@ class PlaybackRuntime(
         }
     }
 
-    private suspend fun recover(reason: String) {
+    private suspend fun recover(error: PlayerErrorDetails) {
         if (closed || recovering) return
         val (current, failedBinding) = activePlayback() ?: return
         recovering = true
         try {
             rejectedSourceIds.add(current.released.mediaSourceId)
-            telemetry.log("player_failed", mapOf("errorMessage" to reason))
+            telemetry.log(
+                "player_failed",
+                error.telemetry.ifEmpty { mapOf("errorMessage" to error.reason) },
+            )
             val resumeTicks = positionTicks(failedBinding)
             advancePipeline(PipelineEvent.Failed(SOURCE_FAILED_MESSAGE))
             update { it.copy(status = PlaybackStatus.RECOVERING, reason = SOURCE_FAILED_MESSAGE) }
@@ -505,8 +508,8 @@ class PlaybackRuntime(
             fireAndForget { stop(PlaybackStatus.ENDED) }
         }
 
-        override fun onError(reason: String) {
-            fireAndForget { recover(reason) }
+        override fun onError(error: PlayerErrorDetails) {
+            fireAndForget { recover(error) }
         }
 
         private fun statusAfterReady(): PlaybackStatus = if (started) state.value.status else PlaybackStatus.READY
