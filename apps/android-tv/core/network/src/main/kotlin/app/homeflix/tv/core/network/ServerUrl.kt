@@ -4,13 +4,10 @@ private val SERVER_URL_SCHEMES = listOf("http://", "https://")
 
 fun normalizeServerUrl(input: String): String? {
     val trimmed = input.trim().trimEnd('/')
-    val scheme =
-        SERVER_URL_SCHEMES.firstOrNull { candidate ->
-            trimmed.startsWith(candidate, ignoreCase = true)
+    for (scheme in SERVER_URL_SCHEMES) {
+        if (trimmed.startsWith(scheme, ignoreCase = true)) {
+            return trimmed
         }
-    return when {
-        scheme == null -> null
-        trimmed.length <= scheme.length -> null
-        else -> trimmed
     }
+    return null
 }

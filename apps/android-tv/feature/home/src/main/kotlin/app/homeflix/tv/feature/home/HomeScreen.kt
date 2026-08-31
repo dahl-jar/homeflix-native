@@ -18,11 +18,23 @@ fun HomeScreen(
     onProfileSelected: () -> Unit,
     libraries: List<LibrarySummary> = emptyList(),
     onLibrarySelected: (LibrarySummary) -> Unit = {},
+    cachedContent: HomeContent? = null,
+    onContentLoaded: (HomeContent) -> Unit = {},
 ) {
-    var state by remember(gateway, viewer.id) { mutableStateOf<HomeUiState>(HomeUiState.Loading) }
+    var state by remember(gateway, viewer.id) {
+        mutableStateOf<HomeUiState>(
+            if (cachedContent != null) HomeUiState.Content(cachedContent) else HomeUiState.Loading,
+        )
+    }
 
     LaunchedEffect(gateway, viewer.id) {
-        state = loadHome(gateway, viewer.id)
+        val loaded = loadHome(gateway, viewer.id)
+        if (loaded is HomeUiState.Content) {
+            onContentLoaded(loaded.value)
+            state = loaded
+        } else if (state !is HomeUiState.Content) {
+            state = loaded
+        }
     }
 
     when (val current = state) {

@@ -17,7 +17,16 @@ class DetailApi(
         DetailContract.detail(
             json = json,
             baseUrl = baseUrl,
-            payload = client.get("/Users/$userId/Items/$itemId"),
+            payload =
+                client.get(
+                    path = "/Users/$userId/Items/$itemId",
+                    query =
+                        mapOf(
+                            "includeMediaSources" to "false",
+                            "includeMediaStreams" to "false",
+                            "waitForSeriesTree" to "false",
+                        ),
+                ),
         )
 
     override suspend fun fetchSimilar(

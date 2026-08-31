@@ -12,6 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +31,7 @@ internal fun LibraryFilterBar(
     options: LibraryFilterOptions,
     onOpenPicker: (LibraryFilterKind) -> Unit,
     onClearRefinements: () -> Unit,
+    pillFocusRequesters: Map<LibraryFilterKind, FocusRequester> = emptyMap(),
     startPadding: Dp = 0.dp,
     endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
@@ -51,12 +54,14 @@ internal fun LibraryFilterBar(
             label = selection.sort.label,
             refined = false,
             onClick = { onOpenPicker(LibraryFilterKind.Sort) },
+            modifier = Modifier.optionalFocusRequester(pillFocusRequesters[LibraryFilterKind.Sort]),
         )
         if (options.genres.isNotEmpty()) {
             FilterPill(
                 label = selection.genre ?: "Genre",
                 refined = selection.genre != null,
                 onClick = { onOpenPicker(LibraryFilterKind.Genre) },
+                modifier = Modifier.optionalFocusRequester(pillFocusRequesters[LibraryFilterKind.Genre]),
             )
         }
         if (options.decades.isNotEmpty()) {
@@ -64,20 +69,26 @@ internal fun LibraryFilterBar(
                 label = selection.decade?.label ?: "Decade",
                 refined = selection.decade != null,
                 onClick = { onOpenPicker(LibraryFilterKind.Decade) },
+                modifier = Modifier.optionalFocusRequester(pillFocusRequesters[LibraryFilterKind.Decade]),
             )
         }
         FilterPill(
             label = selection.rating?.label ?: "Rating",
             refined = selection.rating != null,
             onClick = { onOpenPicker(LibraryFilterKind.Rating) },
+            modifier = Modifier.optionalFocusRequester(pillFocusRequesters[LibraryFilterKind.Rating]),
         )
         FilterPill(
             label = selection.status?.label ?: "Watched",
             refined = selection.status != null,
             onClick = { onOpenPicker(LibraryFilterKind.Status) },
+            modifier = Modifier.optionalFocusRequester(pillFocusRequesters[LibraryFilterKind.Status]),
         )
     }
 }
+
+private fun Modifier.optionalFocusRequester(focusRequester: FocusRequester?): Modifier =
+    if (focusRequester != null) this.focusRequester(focusRequester) else this
 
 @Composable
 private fun FilterPill(

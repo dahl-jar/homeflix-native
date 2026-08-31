@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
+import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.TvFocusAppearance
 import app.homeflix.tv.core.designsystem.TvFocusSurface
@@ -41,6 +42,7 @@ internal fun DetailSummary(
     content: DetailContent,
     playFocusRequester: FocusRequester,
     onPlaySelected: (String) -> Unit,
+    onRestartSelected: (String) -> Unit,
     onPlayFocused: () -> Unit,
 ) {
     val item = content.item
@@ -76,27 +78,48 @@ internal fun DetailSummary(
             )
         }
         Spacer(Modifier.height(PLAY_TOP_SPACING))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ACTION_SPACING),
-        ) {
-            PlayButton(
-                label = playLabel(item),
-                contentDescription = "Play ${item.name}",
-                onClick = { onPlaySelected(item.id) },
-                modifier =
-                    Modifier
-                        .focusRequester(playFocusRequester)
-                        .onFocusChanged { focusState ->
-                            if (focusState.isFocused) {
-                                onPlayFocused()
-                            }
-                        },
-            )
-            ActionButton(label = "Trailer", icon = Icons.Filled.Theaters)
-            ActionButton(label = "Mark Played", icon = Icons.Filled.CheckCircle)
-            ActionButton(label = "Restart", icon = Icons.Filled.Refresh)
-        }
+        DetailActionsRow(
+            item = item,
+            playFocusRequester = playFocusRequester,
+            onPlaySelected = onPlaySelected,
+            onRestartSelected = onRestartSelected,
+            onPlayFocused = onPlayFocused,
+        )
+    }
+}
+
+@Composable
+private fun DetailActionsRow(
+    item: MediaItem,
+    playFocusRequester: FocusRequester,
+    onPlaySelected: (String) -> Unit,
+    onRestartSelected: (String) -> Unit,
+    onPlayFocused: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ACTION_SPACING),
+    ) {
+        PlayButton(
+            label = playLabel(item),
+            contentDescription = "Play ${item.name}",
+            onClick = { onPlaySelected(item.id) },
+            modifier =
+                Modifier
+                    .focusRequester(playFocusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            onPlayFocused()
+                        }
+                    },
+        )
+        ActionButton(label = "Trailer", icon = Icons.Filled.Theaters)
+        ActionButton(label = "Mark Played", icon = Icons.Filled.CheckCircle)
+        ActionButton(
+            label = "Restart",
+            icon = Icons.Filled.Refresh,
+            onClick = { onRestartSelected(item.id) },
+        )
     }
 }
 

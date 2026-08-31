@@ -75,6 +75,7 @@ fun PlayerScreen(
     userId: String,
     itemId: String,
     onExit: () -> Unit,
+    fromStart: Boolean = false,
 ) {
     var bootstrap by remember { mutableStateOf<PlayerBootstrap>(PlayerBootstrap.Loading) }
     var retryToken by remember { mutableIntStateOf(0) }
@@ -90,7 +91,9 @@ fun PlayerScreen(
                     } else {
                         item
                     }
-                PlayerBootstrap.Ready(playable)
+                PlayerBootstrap.Ready(
+                    if (fromStart) playable.copy(resumePositionTicks = 0) else playable,
+                )
             } catch (failure: CancellationException) {
                 throw failure
             } catch (_: Exception) {

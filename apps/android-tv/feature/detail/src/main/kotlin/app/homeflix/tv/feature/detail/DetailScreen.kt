@@ -52,6 +52,7 @@ fun DetailScreen(
     onProfileSelected: () -> Unit,
     onMediaSelected: (String) -> Unit,
     onPlaySelected: (String) -> Unit,
+    onRestartSelected: (String) -> Unit = {},
 ) {
     var state by remember(gateway, itemId) { mutableStateOf<DetailUiState>(DetailUiState.Loading) }
     var similar by remember(gateway, itemId) { mutableStateOf(emptyList<MediaItem>()) }
@@ -100,6 +101,7 @@ fun DetailScreen(
         onSeasonSelected = { index -> seasonIndex = index },
         onMediaSelected = onMediaSelected,
         onPlaySelected = onPlaySelected,
+        onRestartSelected = onRestartSelected,
         profile = profile,
         libraries = libraries,
         onHomeSelected = onHomeSelected,
@@ -119,6 +121,7 @@ private fun DetailStateViews(
     onSeasonSelected: (Int) -> Unit,
     onMediaSelected: (String) -> Unit,
     onPlaySelected: (String) -> Unit,
+    onRestartSelected: (String) -> Unit,
     profile: TvNavProfile,
     libraries: List<LibrarySummary>,
     onHomeSelected: () -> Unit,
@@ -149,6 +152,7 @@ private fun DetailStateViews(
                                 onSeasonSelected = onSeasonSelected,
                                 onMediaSelected = onMediaSelected,
                                 onPlaySelected = onPlaySelected,
+                                onRestartSelected = onRestartSelected,
                             ),
                     ),
                 )
@@ -178,6 +182,7 @@ private class DetailPageActions(
     val onSeasonSelected: (Int) -> Unit,
     val onMediaSelected: (String) -> Unit,
     val onPlaySelected: (String) -> Unit,
+    val onRestartSelected: (String) -> Unit,
 )
 
 @Composable
@@ -221,6 +226,7 @@ private fun DetailSections(page: DetailPage) {
                 content = page.content,
                 playFocusRequester = page.actions.playFocusRequester,
                 onPlaySelected = page.actions.onPlaySelected,
+                onRestartSelected = page.actions.onRestartSelected,
                 onPlayFocused = {
                     scope.launch { listState.animateScrollToItem(0) }
                 },

@@ -46,6 +46,8 @@ fun LibraryScreen(
     var options by remember(library.id) { mutableStateOf(LibraryFilterOptions(emptyList(), emptyList())) }
     var retryToken by remember(library.id) { mutableStateOf(0) }
     var activePicker by remember(library.id) { mutableStateOf<LibraryFilterKind?>(null) }
+    var lastPickerKind by remember(library.id) { mutableStateOf<LibraryFilterKind?>(null) }
+    val pillFocusRequesters = remember { LibraryFilterKind.entries.associateWith { FocusRequester() } }
     val pager = remember(library.id, selection, retryToken) { LibraryPager() }
     var state by remember(pager) { mutableStateOf<LibraryUiState>(LibraryUiState.Loading) }
     val gridState = rememberLazyGridState()
@@ -67,7 +69,8 @@ fun LibraryScreen(
 
     LaunchedEffect(activePicker) {
         if (activePicker == null) {
-            contentFocusRequester.requestFocus()
+            val pillFocusRequester = lastPickerKind?.let(pillFocusRequesters::get)
+            (pillFocusRequester ?: contentFocusRequester).requestFocus()
         }
     }
 
@@ -82,8 +85,12 @@ fun LibraryScreen(
         activePicker = activePicker,
         contentFocusRequester = contentFocusRequester,
         onSelectionChanged = { changed -> selection = changed },
-        onOpenPicker = { kind -> activePicker = kind },
+        onOpenPicker = { kind ->
+            lastPickerKind = kind
+            activePicker = kind
+        },
         onDismissPicker = { activePicker = null },
+        pillFocusRequesters = pillFocusRequesters,
         onRetry = { retryToken += 1 },
         onMediaSelected = onMediaSelected,
         onHomeSelected = onHomeSelected,
@@ -106,6 +113,7 @@ private fun LibraryScaffold(
     onSelectionChanged: (LibraryFilterSelection) -> Unit,
     onOpenPicker: (LibraryFilterKind) -> Unit,
     onDismissPicker: () -> Unit,
+    pillFocusRequesters: Map<LibraryFilterKind, FocusRequester>,
     onRetry: () -> Unit,
     onMediaSelected: (String) -> Unit,
     onHomeSelected: () -> Unit,
@@ -126,6 +134,7 @@ private fun LibraryScaffold(
             gridState = gridState,
             contentFocusRequester = contentFocusRequester,
             onOpenPicker = onOpenPicker,
+            pillFocusRequesters = pillFocusRequesters,
             onClearRefinements = {
                 onSelectionChanged(selection.copy(genre = null, decade = null, rating = null, status = null))
             },
@@ -217,6 +226,7 @@ private fun LibraryContent(
     gridState: LazyGridState,
     contentFocusRequester: FocusRequester,
     onOpenPicker: (LibraryFilterKind) -> Unit,
+    pillFocusRequesters: Map<LibraryFilterKind, FocusRequester>,
     onClearRefinements: () -> Unit,
     onRetry: () -> Unit,
     onMediaSelected: (String) -> Unit,
@@ -241,6 +251,7 @@ private fun LibraryContent(
             options = options,
             onOpenPicker = onOpenPicker,
             onClearRefinements = onClearRefinements,
+            pillFocusRequesters = pillFocusRequesters,
             startPadding = CONTENT_START_PADDING,
             endPadding = CONTENT_END_PADDING,
         )

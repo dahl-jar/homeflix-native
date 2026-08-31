@@ -26,6 +26,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -100,6 +101,7 @@ private fun rememberServerEntry(
     var error by remember { mutableStateOf<ServerConnectError?>(null) }
     var isConnecting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val keyboard = LocalSoftwareKeyboardController.current
 
     return ServerEntry(
         url = url,
@@ -113,6 +115,7 @@ private fun rememberServerEntry(
             if (!isConnecting) {
                 isConnecting = true
                 error = null
+                keyboard?.hide()
                 scope.launch {
                     error =
                         try {

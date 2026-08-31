@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,11 +42,13 @@ internal fun LibraryFilterPicker(
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val firstRowFocusRequester = remember { FocusRequester() }
+    val selectedRowFocusRequester = remember { FocusRequester() }
+    val focusIndex = rows.indexOfFirst(PickerRow::selected).coerceAtLeast(0)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = focusIndex)
 
     BackHandler(onBack = onDismiss)
     LaunchedEffect(title) {
-        firstRowFocusRequester.requestFocus()
+        selectedRowFocusRequester.requestFocus()
     }
 
     Box(
@@ -71,14 +74,14 @@ internal fun LibraryFilterPicker(
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(PICKER_TITLE_SPACING))
-            LazyColumn {
+            LazyColumn(state = listState) {
                 items(
                     items = rows,
                     key = { row -> row.key ?: CLEAR_ROW_KEY },
                 ) { row ->
                     PickerRowSurface(
                         row = row,
-                        focusRequester = firstRowFocusRequester.takeIf { row == rows.first() },
+                        focusRequester = selectedRowFocusRequester.takeIf { row == rows[focusIndex] },
                         onSelect = onSelect,
                     )
                 }

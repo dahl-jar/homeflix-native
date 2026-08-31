@@ -229,6 +229,23 @@ class HomeScreenTest {
     }
 
     @Test
+    fun shouldShowCachedContentWhileRefreshing() {
+        composeRule.setContent {
+            HomeflixTheme {
+                HomeScreen(
+                    gateway = PendingHomeGateway(),
+                    viewer = viewer(),
+                    onMediaSelected = {},
+                    onProfileSelected = {},
+                    cachedContent = homeContent(),
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Episode One card").assertExists()
+    }
+
+    @Test
     fun shouldShowEmptyLibrary() {
         composeRule.setContent {
             HomeflixTheme {

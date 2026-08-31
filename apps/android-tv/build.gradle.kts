@@ -12,7 +12,8 @@ val pitestTargets =
         ":core:network" to
             listOf(
                 "app.homeflix.tv.core.network.JellyfinIdentity",
-                "app.homeflix.tv.core.network.ServerCandidatesKt",
+                "app.homeflix.tv.core.network.ServerUrlKt",
+                "app.homeflix.tv.core.network.RetryInterceptor",
             ).joinToString(","),
         ":feature:auth" to
             listOf(

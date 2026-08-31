@@ -52,6 +52,18 @@ class DetailScreenTest {
     }
 
     @Test
+    fun shouldFireOnRestartSelected() {
+        var restartedId: String? = null
+        setDetail(FakeDetailGateway(item = movie()), onRestartSelected = { restartedId = it })
+
+        composeRule.onNodeWithContentDescription("Restart").performClick()
+
+        composeRule.runOnIdle {
+            assertEquals("item-one", restartedId)
+        }
+    }
+
+    @Test
     fun shouldShowEpisodesForSeries() {
         setDetail(FakeDetailGateway(item = series()))
 
@@ -84,10 +96,11 @@ class DetailScreenTest {
         gateway: DetailGateway,
         onMediaSelected: (String) -> Unit = {},
         onPlaySelected: (String) -> Unit = {},
+        onRestartSelected: (String) -> Unit = {},
     ) {
         composeRule.setContent {
             HomeflixTheme {
-                DetailScreenUnderTest(gateway, onMediaSelected, onPlaySelected)
+                DetailScreenUnderTest(gateway, onMediaSelected, onPlaySelected, onRestartSelected)
             }
         }
     }
@@ -98,6 +111,7 @@ private fun DetailScreenUnderTest(
     gateway: DetailGateway,
     onMediaSelected: (String) -> Unit,
     onPlaySelected: (String) -> Unit,
+    onRestartSelected: (String) -> Unit,
 ) {
     DetailScreen(
         gateway = gateway,
@@ -110,6 +124,7 @@ private fun DetailScreenUnderTest(
         onProfileSelected = {},
         onMediaSelected = onMediaSelected,
         onPlaySelected = onPlaySelected,
+        onRestartSelected = onRestartSelected,
     )
 }
 

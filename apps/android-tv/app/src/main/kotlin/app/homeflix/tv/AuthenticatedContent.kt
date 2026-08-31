@@ -17,6 +17,7 @@ import app.homeflix.tv.feature.detail.DetailApi
 import app.homeflix.tv.feature.detail.DetailGateway
 import app.homeflix.tv.feature.detail.DetailScreen
 import app.homeflix.tv.feature.home.HomeApi
+import app.homeflix.tv.feature.home.HomeContent
 import app.homeflix.tv.feature.home.HomeGateway
 import app.homeflix.tv.feature.home.HomeScreen
 import app.homeflix.tv.feature.home.HomeViewer
@@ -102,27 +103,26 @@ private fun SignedInContent(
     onChangeServer: () -> Unit,
     onSignOut: () -> Unit,
 ) {
-    val activeSession = session
     val gateways =
-        rememberGateways(runtime, activeSession, homeGateway, libraryGateway, detailGateway, ioDispatcher)
-    var detailStack by remember(activeSession) { mutableStateOf(emptyList<String>()) }
+        rememberGateways(runtime, session, homeGateway, libraryGateway, detailGateway, ioDispatcher)
+    var detailStack by remember(session) { mutableStateOf(emptyList<String>()) }
     val openDetail: (String) -> Unit = { itemId -> detailStack = detailStack + itemId }
-    var playerItem by remember(activeSession) { mutableStateOf<String?>(null) }
-    val libraries = rememberLibraries(gateways.library, activeSession.userId)
-    var destination by remember(activeSession) {
+    var playerLaunch by remember(session) { mutableStateOf<PlayerLaunch?>(null) }
+    val libraries = rememberLibraries(gateways.library, session.userId)
+    var destination by remember(session) {
         mutableStateOf<AuthenticatedDestination>(AuthenticatedDestination.Home)
     }
+    var homeCache by remember(session) { mutableStateOf<HomeContent?>(null) }
+    val viewer = runtime.viewer(session)
 
-    val viewer = runtime.viewer(activeSession)
-
-    val activePlayerItem = playerItem
-    if (activePlayerItem != null) {
+    val activeLaunch = playerLaunch
+    if (activeLaunch != null) {
         PlayerDestination(
             gateway = gateways.player,
             server = runtime.server,
-            userId = activeSession.userId,
-            itemId = activePlayerItem,
-            onExit = { playerItem = null },
+            userId = session.userId,
+            launch = activeLaunch,
+            onExit = { playerLaunch = null },
         )
         return
     }
@@ -131,7 +131,7 @@ private fun SignedInContent(
     if (activeDetailItem != null) {
         DetailDestination(
             gateway = gateways.detail,
-            userId = activeSession.userId,
+            userId = session.userId,
             itemId = activeDetailItem,
             viewer = viewer,
             libraries = libraries,
@@ -141,7 +141,8 @@ private fun SignedInContent(
                 destination = selected
             },
             onMediaSelected = openDetail,
-            onPlaySelected = { itemId -> playerItem = itemId },
+            onPlaySelected = { itemId -> playerLaunch = PlayerLaunch(itemId, fromStart = false) },
+            onRestartSelected = { itemId -> playerLaunch = PlayerLaunch(itemId, fromStart = true) },
         )
         return
     }
@@ -149,12 +150,14 @@ private fun SignedInContent(
     BaseDestination(
         destination = destination,
         runtime = runtime,
-        userId = activeSession.userId,
+        userId = session.userId,
         viewer = viewer,
         libraries = libraries,
         homeGateway = gateways.home,
         libraryGateway = gateways.library,
         ioDispatcher = ioDispatcher,
+        homeCache = homeCache,
+        onHomeContentLoaded = { content -> homeCache = content },
         onDestinationSelected = { selected -> destination = selected },
         onMediaSelected = openDetail,
         onChangeServer = onChangeServer,
@@ -174,19 +177,25 @@ private fun rememberLibraries(
     return libraries
 }
 
+private data class PlayerLaunch(
+    val itemId: String,
+    val fromStart: Boolean,
+)
+
 @Composable
 private fun PlayerDestination(
     gateway: PlayerGateway,
     server: String,
     userId: String,
-    itemId: String,
+    launch: PlayerLaunch,
     onExit: () -> Unit,
 ) {
     PlayerScreen(
         gateway = gateway,
         baseUrl = server,
         userId = userId,
-        itemId = itemId,
+        itemId = launch.itemId,
+        fromStart = launch.fromStart,
         onExit = onExit,
     )
 }
@@ -236,6 +245,7 @@ private fun DetailDestination(
     onDestinationSelected: (AuthenticatedDestination) -> Unit,
     onMediaSelected: (String) -> Unit,
     onPlaySelected: (String) -> Unit,
+    onRestartSelected: (String) -> Unit,
 ) {
     BackHandler(onBack = onBack)
     DetailScreen(
@@ -251,6 +261,7 @@ private fun DetailDestination(
         onProfileSelected = { onDestinationSelected(AuthenticatedDestination.Profile) },
         onMediaSelected = onMediaSelected,
         onPlaySelected = onPlaySelected,
+        onRestartSelected = onRestartSelected,
     )
 }
 
@@ -264,6 +275,8 @@ private fun BaseDestination(
     homeGateway: HomeGateway,
     libraryGateway: LibraryGateway,
     ioDispatcher: CoroutineDispatcher,
+    homeCache: HomeContent?,
+    onHomeContentLoaded: (HomeContent) -> Unit,
     onDestinationSelected: (AuthenticatedDestination) -> Unit,
     onMediaSelected: (String) -> Unit,
     onChangeServer: () -> Unit,
@@ -280,6 +293,8 @@ private fun BaseDestination(
                 onLibrarySelected = { library ->
                     onDestinationSelected(AuthenticatedDestination.Library(library))
                 },
+                cachedContent = homeCache,
+                onContentLoaded = onHomeContentLoaded,
             )
 
         is AuthenticatedDestination.Library -> {
