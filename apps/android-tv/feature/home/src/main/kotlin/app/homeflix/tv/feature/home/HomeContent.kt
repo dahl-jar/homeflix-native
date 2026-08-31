@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,10 +27,9 @@ import androidx.compose.ui.unit.dp
 import app.homeflix.tv.core.catalog.LibrarySummary
 import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
-import app.homeflix.tv.core.designsystem.TvNavEntry
 import app.homeflix.tv.core.designsystem.TvNavProfile
 import app.homeflix.tv.core.designsystem.TvNavigationRail
-import app.homeflix.tv.core.designsystem.libraryNavIcon
+import app.homeflix.tv.core.designsystem.libraryNavEntries
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 
@@ -84,7 +81,7 @@ fun HomeCatalog(
         )
         TvNavigationRail(
             profile = TvNavProfile(name = viewer.name, avatarUrl = viewer.avatarUrl),
-            entries = homeNavEntries(libraries),
+            entries = libraryNavEntries(libraries, homeSelected = true),
             contentFocusRequester = railEntryFocusRequester,
             onEntrySelected = { entryId ->
                 libraries.firstOrNull { library -> library.id == entryId }?.let(onLibrarySelected)
@@ -95,26 +92,6 @@ fun HomeCatalog(
         HomeHeader(modifier = Modifier.align(Alignment.TopStart))
     }
 }
-
-private const val HOME_ENTRY_ID = "home"
-
-private fun homeNavEntries(libraries: List<LibrarySummary>): List<TvNavEntry> =
-    listOf(
-        TvNavEntry(
-            id = HOME_ENTRY_ID,
-            label = "Home",
-            icon = Icons.Filled.Home,
-            selected = true,
-        ),
-    ) +
-        libraries.map { library ->
-            TvNavEntry(
-                id = library.id,
-                label = library.name,
-                icon = libraryNavIcon(library.collectionType),
-                selected = false,
-            )
-        }
 
 private fun Modifier.railsFocusContainment(): Modifier =
     focusProperties {

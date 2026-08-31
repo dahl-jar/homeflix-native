@@ -1,5 +1,6 @@
 package app.homeflix.tv.feature.player
 
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -21,10 +22,9 @@ class PipelineProgressWatcherTest {
                     ),
                 )
             val seen = mutableListOf<PipelineEvent>()
-            val watcher = PipelineProgressWatcher(gateway, backgroundScope)
 
-            val handle = watcher.watch(pipelineId = "native-abc", attemptId = "native-abc-a1", onEvent = seen::add)
-            advanceTimeBy(500)
+            val handle = watchInto(gateway, seen)
+            advanceTimeBy(POLL_ADVANCE_MILLIS)
             handle.stop()
 
             assertEquals(listOf("sources", "resolve", "stream"), stageIds(seen))
@@ -35,9 +35,8 @@ class PipelineProgressWatcherTest {
         runTest {
             val gateway = QueuedProgressGateway(listOf(listOf(eventDto(sequence = 1, stageId = "sources"))))
             val seen = mutableListOf<PipelineEvent>()
-            val watcher = PipelineProgressWatcher(gateway, backgroundScope)
 
-            val handle = watcher.watch(pipelineId = "native-abc", attemptId = "native-abc-a1", onEvent = seen::add)
+            val handle = watchInto(gateway, seen)
             handle.stop()
 
             assertTrue(gateway.reads >= 1)
@@ -52,10 +51,9 @@ class PipelineProgressWatcherTest {
                     listOf(null, listOf(eventDto(sequence = 1, stageId = "sources"))),
                 )
             val seen = mutableListOf<PipelineEvent>()
-            val watcher = PipelineProgressWatcher(gateway, backgroundScope)
 
-            val handle = watcher.watch(pipelineId = "native-abc", attemptId = "native-abc-a1", onEvent = seen::add)
-            advanceTimeBy(500)
+            val handle = watchInto(gateway, seen)
+            advanceTimeBy(POLL_ADVANCE_MILLIS)
             handle.stop()
 
             assertEquals(listOf("sources"), stageIds(seen))
@@ -87,6 +85,13 @@ class PipelineProgressWatcherTest {
             assertTrue(timestamps[1] - timestamps[0] >= 400)
         }
 
+    private fun TestScope.watchInto(
+        gateway: QueuedProgressGateway,
+        seen: MutableList<PipelineEvent>,
+    ): ProgressWatchHandle =
+        PipelineProgressWatcher(gateway, backgroundScope)
+            .watch(pipelineId = "native-abc", attemptId = "native-abc-a1", onEvent = seen::add)
+
     private fun stageIds(seen: List<PipelineEvent>): List<String> =
         seen.filterIsInstance<PipelineEvent.StageProgress>().map(PipelineEvent.StageProgress::stageId)
 
@@ -106,6 +111,8 @@ class PipelineProgressWatcherTest {
             reason = null,
         )
 }
+
+private const val POLL_ADVANCE_MILLIS = 500L
 
 private class QueuedProgressGateway(
     responses: List<List<PipelineEventDto>?>,

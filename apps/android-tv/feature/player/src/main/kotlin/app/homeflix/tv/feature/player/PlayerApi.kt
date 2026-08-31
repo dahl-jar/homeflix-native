@@ -163,44 +163,32 @@ class PlayerApi(
         userId: String,
         seriesId: String,
         itemId: String,
-    ): List<PlayableItem> {
-        val payload =
-            client.get(
-                path = "/Shows/$seriesId/Episodes",
-                query =
-                    mapOf(
-                        "userId" to userId,
-                        "startItemId" to itemId,
-                        "limit" to FOLLOWING_EPISODES_LIMIT.toString(),
-                        "isMissing" to "false",
-                        "enableImages" to "true",
-                        "enableUserData" to "true",
-                        "enableTotalRecordCount" to "false",
-                        "fields" to "Overview,PrimaryImageAspectRatio",
-                    ),
-            )
-        return json.decodeFromString<PlayableItemsResponse>(payload).items.map { it.toPlayableItem(baseUrl) }
-    }
+    ): List<PlayableItem> = fetchEpisodes(userId, seriesId, itemId, limit = FOLLOWING_EPISODES_LIMIT)
 
     override suspend fun seriesEpisodes(
         userId: String,
         seriesId: String,
         itemId: String,
+    ): List<PlayableItem> = fetchEpisodes(userId, seriesId, itemId, limit = null)
+
+    private suspend fun fetchEpisodes(
+        userId: String,
+        seriesId: String,
+        itemId: String,
+        limit: Int?,
     ): List<PlayableItem> {
-        val payload =
-            client.get(
-                path = "/Shows/$seriesId/Episodes",
-                query =
-                    mapOf(
-                        "userId" to userId,
-                        "startItemId" to itemId,
-                        "isMissing" to "false",
-                        "enableImages" to "true",
-                        "enableUserData" to "true",
-                        "enableTotalRecordCount" to "false",
-                        "fields" to "Overview,PrimaryImageAspectRatio",
-                    ),
-            )
+        val query =
+            buildMap {
+                put("userId", userId)
+                put("startItemId", itemId)
+                limit?.let { put("limit", it.toString()) }
+                put("isMissing", "false")
+                put("enableImages", "true")
+                put("enableUserData", "true")
+                put("enableTotalRecordCount", "false")
+                put("fields", "Overview,PrimaryImageAspectRatio")
+            }
+        val payload = client.get(path = "/Shows/$seriesId/Episodes", query = query)
         return json.decodeFromString<PlayableItemsResponse>(payload).items.map { it.toPlayableItem(baseUrl) }
     }
 

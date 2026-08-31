@@ -21,6 +21,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testFixtures {
+        enable = true
+    }
+
     testOptions {
         unitTests.all {
             it.useJUnitPlatform()

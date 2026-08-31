@@ -22,16 +22,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldFocusFirstContinueCard() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("Episode One card").assertIsFocused()
         composeRule.onNodeWithContentDescription("Hero Episode One").assertExists()
@@ -40,16 +31,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldPositionFirstRailBelowHero() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         val viewportHeight =
             composeRule
@@ -70,16 +52,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldFillHeroWithArtwork() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         val viewportWidth =
             composeRule
@@ -98,16 +71,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldShowLeftNavigationRail() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         val profileRight =
             composeRule
@@ -126,16 +90,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldMoveFocusToNavigationRail() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionLeft)
@@ -150,16 +105,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldKeepFocusOnCardsWhenPressingUp() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionRight)
@@ -173,16 +119,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldReturnFocusFromRailToCards() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionLeft)
@@ -209,16 +146,7 @@ class HomeScreenTest {
     @Test
     fun shouldUpdateHeroAndSelectionOnFocus() {
         var selectedId: String? = null
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = { selectedId = it },
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog(onMediaSelected = { selectedId = it })
 
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionDown)
@@ -239,16 +167,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldMoveFocusToNextRail() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionDown)
@@ -259,16 +178,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldPinFocusedCardAtRailStart() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("Episode One card").performKeyInput {
             pressKey(Key.DirectionRight)
@@ -297,16 +207,7 @@ class HomeScreenTest {
 
     @Test
     fun shouldExposePlaybackProgress() {
-        composeRule.setContent {
-            HomeflixTheme {
-                HomeCatalog(
-                    content = homeContent(),
-                    viewer = viewer(),
-                    onMediaSelected = {},
-                    onProfileSelected = {},
-                )
-            }
-        }
+        setHomeCatalog()
 
         composeRule.onNodeWithContentDescription("45% watched").assertExists()
     }
@@ -357,6 +258,19 @@ class HomeScreenTest {
         }
 
         composeRule.onNodeWithText("Can’t load Homeflix.").assertExists()
+    }
+
+    private fun setHomeCatalog(onMediaSelected: (String) -> Unit = {}) {
+        composeRule.setContent {
+            HomeflixTheme {
+                HomeCatalog(
+                    content = homeContent(),
+                    viewer = viewer(),
+                    onMediaSelected = onMediaSelected,
+                    onProfileSelected = {},
+                )
+            }
+        }
     }
 }
 

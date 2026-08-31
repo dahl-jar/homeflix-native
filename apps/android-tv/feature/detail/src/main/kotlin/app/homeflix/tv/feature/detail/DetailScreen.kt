@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,10 +31,10 @@ import androidx.tv.material3.Text
 import app.homeflix.tv.core.catalog.LibrarySummary
 import app.homeflix.tv.core.catalog.MediaItem
 import app.homeflix.tv.core.designsystem.HomeflixColors
-import app.homeflix.tv.core.designsystem.TvNavEntry
 import app.homeflix.tv.core.designsystem.TvNavProfile
 import app.homeflix.tv.core.designsystem.TvNavigationRail
-import app.homeflix.tv.core.designsystem.libraryNavIcon
+import app.homeflix.tv.core.designsystem.libraryNavEntries
+import app.homeflix.tv.core.designsystem.libraryNavRouter
 import coil3.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
@@ -139,66 +137,53 @@ private fun DetailStateViews(
                 )
             is DetailUiState.Content ->
                 DetailContentScaffold(
-                    content = state.value,
-                    similar = similar,
-                    seasons = seasons,
-                    seasonIndex = seasonIndex,
-                    episodes = episodes,
-                    playFocusRequester = contentFocusRequester,
-                    onSeasonSelected = onSeasonSelected,
-                    onMediaSelected = onMediaSelected,
-                    onPlaySelected = onPlaySelected,
+                    DetailPage(
+                        content = state.value,
+                        similar = similar,
+                        seasons = seasons,
+                        seasonIndex = seasonIndex,
+                        episodes = episodes,
+                        actions =
+                            DetailPageActions(
+                                playFocusRequester = contentFocusRequester,
+                                onSeasonSelected = onSeasonSelected,
+                                onMediaSelected = onMediaSelected,
+                                onPlaySelected = onPlaySelected,
+                            ),
+                    ),
                 )
         }
         TvNavigationRail(
             profile = profile,
-            entries = detailNavEntries(libraries),
+            entries = libraryNavEntries(libraries),
             contentFocusRequester = contentFocusRequester,
-            onEntrySelected = { entryId ->
-                when {
-                    entryId == HOME_ENTRY_ID -> onHomeSelected()
-                    else ->
-                        libraries.firstOrNull { candidate -> candidate.id == entryId }?.let(onLibrarySelected)
-                }
-            },
+            onEntrySelected = libraryNavRouter(libraries, onHomeSelected, onLibrarySelected),
             onProfileSelected = onProfileSelected,
             modifier = Modifier.align(Alignment.TopStart),
         )
     }
 }
 
-private fun detailNavEntries(libraries: List<LibrarySummary>): List<TvNavEntry> =
-    listOf(
-        TvNavEntry(
-            id = HOME_ENTRY_ID,
-            label = "Home",
-            icon = Icons.Filled.Home,
-            selected = false,
-        ),
-    ) +
-        libraries.map { library ->
-            TvNavEntry(
-                id = library.id,
-                label = library.name,
-                icon = libraryNavIcon(library.collectionType),
-                selected = false,
-            )
-        }
+private class DetailPage(
+    val content: DetailContent,
+    val similar: List<MediaItem>,
+    val seasons: List<DetailSeason>,
+    val seasonIndex: Int,
+    val episodes: List<MediaItem>,
+    val actions: DetailPageActions,
+)
+
+private class DetailPageActions(
+    val playFocusRequester: FocusRequester,
+    val onSeasonSelected: (Int) -> Unit,
+    val onMediaSelected: (String) -> Unit,
+    val onPlaySelected: (String) -> Unit,
+)
 
 @Composable
-private fun DetailContentScaffold(
-    content: DetailContent,
-    similar: List<MediaItem>,
-    seasons: List<DetailSeason>,
-    seasonIndex: Int,
-    episodes: List<MediaItem>,
-    playFocusRequester: FocusRequester,
-    onSeasonSelected: (Int) -> Unit,
-    onMediaSelected: (String) -> Unit,
-    onPlaySelected: (String) -> Unit,
-) {
-    LaunchedEffect(content) {
-        playFocusRequester.requestFocus()
+private fun DetailContentScaffold(page: DetailPage) {
+    LaunchedEffect(page.content) {
+        page.actions.playFocusRequester.requestFocus()
     }
 
     Box(
@@ -207,33 +192,13 @@ private fun DetailContentScaffold(
                 .fillMaxSize()
                 .background(HomeflixColors.Background),
     ) {
-        DetailBackdrop(content.item.backdropImageUrl)
-        DetailSections(
-            content = content,
-            similar = similar,
-            seasons = seasons,
-            seasonIndex = seasonIndex,
-            episodes = episodes,
-            playFocusRequester = playFocusRequester,
-            onSeasonSelected = onSeasonSelected,
-            onMediaSelected = onMediaSelected,
-            onPlaySelected = onPlaySelected,
-        )
+        DetailBackdrop(page.content.item.backdropImageUrl)
+        DetailSections(page)
     }
 }
 
 @Composable
-private fun DetailSections(
-    content: DetailContent,
-    similar: List<MediaItem>,
-    seasons: List<DetailSeason>,
-    seasonIndex: Int,
-    episodes: List<MediaItem>,
-    playFocusRequester: FocusRequester,
-    onSeasonSelected: (Int) -> Unit,
-    onMediaSelected: (String) -> Unit,
-    onPlaySelected: (String) -> Unit,
-) {
+private fun DetailSections(page: DetailPage) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -253,40 +218,40 @@ private fun DetailSections(
         item(key = "summary") {
             Spacer(Modifier.height(SUMMARY_TOP_SPACING))
             DetailSummary(
-                content = content,
-                playFocusRequester = playFocusRequester,
-                onPlaySelected = onPlaySelected,
+                content = page.content,
+                playFocusRequester = page.actions.playFocusRequester,
+                onPlaySelected = page.actions.onPlaySelected,
                 onPlayFocused = {
                     scope.launch { listState.animateScrollToItem(0) }
                 },
             )
         }
-        if (seasons.isNotEmpty()) {
+        if (page.seasons.isNotEmpty()) {
             item(key = "seasons") {
                 Spacer(Modifier.height(SECTION_SPACING))
                 DetailSeasonsRow(
-                    seasons = seasons,
-                    seasonIndex = seasonIndex,
-                    episodes = episodes,
-                    onSeasonSelected = onSeasonSelected,
-                    onEpisodeSelected = onPlaySelected,
+                    seasons = page.seasons,
+                    seasonIndex = page.seasonIndex,
+                    episodes = page.episodes,
+                    onSeasonSelected = page.actions.onSeasonSelected,
+                    onEpisodeSelected = page.actions.onPlaySelected,
                 )
             }
         }
-        if (similar.isNotEmpty()) {
+        if (page.similar.isNotEmpty()) {
             item(key = "similar") {
                 Spacer(Modifier.height(SECTION_SPACING))
                 DetailPosterRail(
                     title = "More Like This",
-                    items = similar,
-                    onMediaSelected = onMediaSelected,
+                    items = page.similar,
+                    onMediaSelected = page.actions.onMediaSelected,
                 )
             }
         }
-        if (content.cast.isNotEmpty()) {
+        if (page.content.cast.isNotEmpty()) {
             item(key = "cast") {
                 Spacer(Modifier.height(SECTION_SPACING))
-                DetailCastRow(cast = content.cast)
+                DetailCastRow(cast = page.content.cast)
             }
         }
     }
@@ -359,7 +324,6 @@ private suspend fun <T> optionalList(block: suspend () -> List<T>): List<T> =
     }
 
 private const val SERIES_TYPE = "Series"
-private const val HOME_ENTRY_ID = "home"
 private const val TOP_SCRIM_ALPHA = 0.45f
 private const val TOP_SCRIM_STOP = 0.28f
 private const val BOTTOM_SCRIM_STOP = 0.5f

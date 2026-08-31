@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,10 +25,10 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.unit.dp
 import app.homeflix.tv.core.catalog.LibrarySummary
 import app.homeflix.tv.core.designsystem.HomeflixColors
-import app.homeflix.tv.core.designsystem.TvNavEntry
+import app.homeflix.tv.core.designsystem.TV_NAV_HOME_ENTRY_ID
 import app.homeflix.tv.core.designsystem.TvNavProfile
 import app.homeflix.tv.core.designsystem.TvNavigationRail
-import app.homeflix.tv.core.designsystem.libraryNavIcon
+import app.homeflix.tv.core.designsystem.libraryNavEntries
 
 @Composable
 fun LibraryScreen(
@@ -200,7 +198,7 @@ private fun LibraryRail(
         contentFocusRequester = contentFocusRequester,
         onEntrySelected = { entryId ->
             when {
-                entryId == HOME_ENTRY_ID -> onHomeSelected()
+                entryId == TV_NAV_HOME_ENTRY_ID -> onHomeSelected()
                 entryId != selectedId ->
                     libraries.firstOrNull { candidate -> candidate.id == entryId }?.let(onLibrarySelected)
             }
@@ -282,28 +280,6 @@ private fun LibraryContent(
     }
 }
 
-private fun libraryNavEntries(
-    libraries: List<LibrarySummary>,
-    selectedId: String,
-): List<TvNavEntry> =
-    listOf(
-        TvNavEntry(
-            id = HOME_ENTRY_ID,
-            label = "Home",
-            icon = Icons.Filled.Home,
-            selected = false,
-        ),
-    ) +
-        libraries.map { library ->
-            TvNavEntry(
-                id = library.id,
-                label = library.name,
-                icon = libraryNavIcon(library.collectionType),
-                selected = library.id == selectedId,
-            )
-        }
-
-private const val HOME_ENTRY_ID = "home"
 private val CONTENT_START_PADDING = 100.dp
 private val CONTENT_END_PADDING = 48.dp
 private val CONTENT_TOP_PADDING = 32.dp

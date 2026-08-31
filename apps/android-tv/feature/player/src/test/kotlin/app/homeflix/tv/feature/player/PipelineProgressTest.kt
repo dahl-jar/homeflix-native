@@ -97,9 +97,7 @@ class PipelineProgressTest {
     @Test
     fun `should complete all stages when resolution completes`() {
         val progress =
-            PipelineProgress()
-                .transition(stageEvent("sources", order = 100, status = StageStatus.COMPLETE))
-                .transition(stageEvent("resolve", order = 200, status = StageStatus.ACTIVE))
+            resolvingProgress()
                 .transition(PipelineEvent.ResolutionCompleted(sourceCount = 2))
 
         assertTrue(progress.stages.all { it.status == StageStatus.COMPLETE })
@@ -151,9 +149,7 @@ class PipelineProgressTest {
     @Test
     fun `should mark active stage failed on failed event`() {
         val progress =
-            PipelineProgress()
-                .transition(stageEvent("sources", order = 100, status = StageStatus.COMPLETE))
-                .transition(stageEvent("resolve", order = 200, status = StageStatus.ACTIVE))
+            resolvingProgress()
                 .transition(PipelineEvent.Failed(reason = "player crashed"))
 
         assertEquals(StageStatus.FAILED, progress.stages.last().status)
@@ -192,6 +188,11 @@ class PipelineProgressTest {
 
         assertEquals("playback failed", progress.reason)
     }
+
+    private fun resolvingProgress(): PipelineProgress =
+        PipelineProgress()
+            .transition(stageEvent("sources", order = 100, status = StageStatus.COMPLETE))
+            .transition(stageEvent("resolve", order = 200, status = StageStatus.ACTIVE))
 
     private fun stageEvent(
         id: String,

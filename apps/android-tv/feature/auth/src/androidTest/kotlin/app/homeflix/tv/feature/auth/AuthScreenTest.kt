@@ -14,12 +14,7 @@ class AuthScreenTest {
 
     @Test
     fun shouldShowApiProfiles() {
-        val profiles =
-            listOf(
-                AuthProfile(id = "one", name = "Darrow", hasPassword = true),
-                AuthProfile(id = "two", name = "Mustang", hasPassword = false),
-                AuthProfile(id = "three", name = "Goblin", hasPassword = false),
-            )
+        val profiles = authProfileFixtures()
 
         composeRule.setContent {
             HomeflixTheme {

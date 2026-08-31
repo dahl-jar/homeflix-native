@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -28,7 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
+import app.homeflix.tv.core.catalog.LibrarySummary
 import coil3.compose.SubcomposeAsyncImage
+
+const val TV_NAV_HOME_ENTRY_ID = "home"
 
 data class TvNavProfile(
     val name: String,
@@ -135,6 +139,40 @@ private fun RailTiles(
         }
     }
 }
+
+fun libraryNavEntries(
+    libraries: List<LibrarySummary>,
+    selectedId: String? = null,
+    homeSelected: Boolean = false,
+): List<TvNavEntry> =
+    listOf(
+        TvNavEntry(
+            id = TV_NAV_HOME_ENTRY_ID,
+            label = "Home",
+            icon = Icons.Filled.Home,
+            selected = homeSelected,
+        ),
+    ) +
+        libraries.map { library ->
+            TvNavEntry(
+                id = library.id,
+                label = library.name,
+                icon = libraryNavIcon(library.collectionType),
+                selected = library.id == selectedId,
+            )
+        }
+
+fun libraryNavRouter(
+    libraries: List<LibrarySummary>,
+    onHomeSelected: () -> Unit,
+    onLibrarySelected: (LibrarySummary) -> Unit,
+): (String) -> Unit =
+    { entryId ->
+        when {
+            entryId == TV_NAV_HOME_ENTRY_ID -> onHomeSelected()
+            else -> libraries.firstOrNull { library -> library.id == entryId }?.let(onLibrarySelected)
+        }
+    }
 
 fun libraryNavIcon(collectionType: String?): ImageVector =
     when (collectionType) {

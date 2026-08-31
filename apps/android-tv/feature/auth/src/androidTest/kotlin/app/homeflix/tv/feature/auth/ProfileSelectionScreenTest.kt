@@ -19,12 +19,7 @@ class ProfileSelectionScreenTest {
         composeRule.setContent {
             HomeflixTheme {
                 ProfileSelectionScreen(
-                    profiles =
-                        listOf(
-                            AuthProfile(id = "one", name = "Darrow", hasPassword = true),
-                            AuthProfile(id = "two", name = "Mustang", hasPassword = false),
-                            AuthProfile(id = "three", name = "Goblin", hasPassword = false),
-                        ),
+                    profiles = authProfileFixtures(),
                     onProfileSelected = {},
                 )
             }

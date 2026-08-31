@@ -2,7 +2,7 @@ package app.homeflix.tv.feature.library
 
 import app.homeflix.tv.core.catalog.LibrarySummary
 import app.homeflix.tv.core.catalog.MediaItem
-import app.homeflix.tv.core.network.JsonApiClient
+import app.homeflix.tv.core.network.RecordingJsonApiClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -84,28 +84,11 @@ class LibraryApiTest {
         }
 }
 
-private data class RecordedRequest(
-    val path: String,
-    val query: Map<String, String>,
-)
-
-private class LibraryRecordingClient : JsonApiClient {
-    val requests = mutableListOf<RecordedRequest>()
-
-    override suspend fun get(path: String): String = get(path, emptyMap())
-
-    override suspend fun get(
+private class LibraryRecordingClient : RecordingJsonApiClient() {
+    override fun respond(
         path: String,
         query: Map<String, String>,
-    ): String {
-        requests += RecordedRequest(path, query)
-        return response(path)
-    }
-
-    override suspend fun post(
-        path: String,
-        body: String,
-    ): String = error("unexpected POST")
+    ): String = response(path)
 
     private fun response(path: String): String =
         when (path) {
