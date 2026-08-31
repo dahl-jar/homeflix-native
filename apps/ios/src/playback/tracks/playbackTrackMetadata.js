@@ -17,6 +17,7 @@ function presentationTrack(stream, label) {
 }
 
 function tracks(mediaSource, type) {
+    /* Stryker disable next-line ArrayDeclaration: fallback entries are filtered by track type */
     const streams = (mediaSource.MediaStreams ?? [])
         .filter((stream) => stream.Type === type && isSelectableTrack(stream, type));
     const labels = playbackTrackLabels(streams, type);
@@ -84,6 +85,7 @@ function trackFlag(track, name) {
 export function matchingNativeSubtitleTrack(selectedServerTrack, nativeTracks) {
     if (!selectedServerTrack?.serverResolved) return null;
     const language = trackLanguage(selectedServerTrack);
+    if (language === 'Unknown') return null;
     const candidates = nativeTracks
         .filter((track) => isSelectableTrack(track, 'Subtitle'))
         .filter((track) => trackLanguage(track) === language);

@@ -72,10 +72,12 @@ export function PickerOverlay({ visible, title, entries, isSelected, onChoose, o
                             paddingBottom: contentInset
                         }
                     ]}
+                    accessible
                     accessibilityActions={[
                         { name: 'increment', label: 'Next option' },
                         { name: 'decrement', label: 'Previous option' }
                     ]}
+                    accessibilityLabel={title}
                     accessibilityRole="adjustable"
                     accessibilityValue={{ text: entries[selectedIndex]?.label ?? '' }}
                     decelerationRate="fast"
