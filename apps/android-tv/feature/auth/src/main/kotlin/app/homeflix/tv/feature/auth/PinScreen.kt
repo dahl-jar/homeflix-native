@@ -31,6 +31,7 @@ import androidx.tv.material3.Text
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.TvFocusAppearance
 import app.homeflix.tv.core.designsystem.TvFocusSurface
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private const val PIN_LENGTH = 4
@@ -119,7 +120,14 @@ private fun rememberPinEntry(onPinSubmitted: suspend (String) -> Boolean): PinEn
                     result.pin?.let { pin ->
                         isSubmitting = true
                         scope.launch {
-                            val accepted = runCatching { onPinSubmitted(pin) }.getOrDefault(false)
+                            val accepted =
+                                try {
+                                    onPinSubmitted(pin)
+                                } catch (failure: CancellationException) {
+                                    throw failure
+                                } catch (_: Exception) {
+                                    false
+                                }
                             if (!accepted) {
                                 state = PinInputReducer.authenticationFailed(state)
                             }

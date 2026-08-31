@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.HomeflixDimensions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private sealed interface AuthContentState {
@@ -54,11 +55,13 @@ fun AuthScreen(
 
     LaunchedEffect(gateway) {
         contentState =
-            runCatching { gateway.fetchPublicProfiles() }
-                .fold(
-                    onSuccess = { profiles -> AuthContentState.Profiles(profiles) },
-                    onFailure = { AuthContentState.Unavailable },
-                )
+            try {
+                AuthContentState.Profiles(gateway.fetchPublicProfiles())
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (_: Exception) {
+                AuthContentState.Unavailable
+            }
     }
 
     when (val state = contentState) {
@@ -157,4 +160,11 @@ private suspend fun authenticate(
     gateway: AuthGateway,
     profile: AuthProfile,
     password: String,
-): AuthenticatedUser? = runCatching { gateway.authenticate(profile.name, password) }.getOrNull()
+): AuthenticatedUser? =
+    try {
+        gateway.authenticate(profile.name, password)
+    } catch (failure: CancellationException) {
+        throw failure
+    } catch (_: Exception) {
+        null
+    }

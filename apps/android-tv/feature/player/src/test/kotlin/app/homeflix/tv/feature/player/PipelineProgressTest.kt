@@ -174,15 +174,16 @@ class PipelineProgressTest {
     }
 
     @Test
-    fun `should keep source attempt when stage event has none`() {
+    fun `should keep source attempt and count when stage event has none`() {
         val progress =
             PipelineProgress(sourceOffset = 2)
                 .transition(
                     stageEvent("resolve", order = 100, status = StageStatus.ACTIVE)
-                        .copy(sourceAttempt = 1),
+                        .copy(sourceAttempt = 1, sourceCount = 4),
                 ).transition(stageEvent("stream", order = 200, status = StageStatus.ACTIVE))
 
         assertEquals(3, progress.sourceAttempt)
+        assertEquals(4, progress.sourceCount)
     }
 
     @Test

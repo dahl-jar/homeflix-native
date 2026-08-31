@@ -10,7 +10,7 @@
     "android-tv:connected-test": "cd apps/android-tv && ./gradlew connectedDebugAndroidTest",
     "android-tv:install": "cd apps/android-tv && ./gradlew installDebug",
     "android-tv:lint": "cd apps/android-tv && ./gradlew ktlintCheck detekt lintDebug",
-    "android-tv:mutation": "cd apps/android-tv && ./gradlew :core:designsystem:pitestDebug :core:network:pitestDebug :core:session:pitestDebug :feature:auth:pitestDebug :feature:home:pitestDebug",
+    "android-tv:mutation": "cd apps/android-tv && ./gradlew :core:designsystem:pitestDebug :core:network:pitestDebug :core:session:pitestDebug :feature:auth:pitestDebug :feature:detail:pitestDebug :feature:home:pitestDebug :feature:profile:pitestDebug",
     "android-tv:test": "cd apps/android-tv && ./gradlew testDebugUnitTest",
     "start": "pnpm --filter @homeflix/ios start",
     "ios": "pnpm --filter @homeflix/ios ios",

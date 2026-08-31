@@ -51,6 +51,14 @@ class PinInputReducerTest {
     }
 
     @Test
+    fun `should accept boundary digits zero and nine`() {
+        val zero = PinInputReducer.append(PinInputState(), 0)
+        val nine = PinInputReducer.append(zero.state, 9)
+
+        assertEquals("09", nine.state.digits)
+    }
+
+    @Test
     fun `should reject invalid digits`() {
         assertThrows(IllegalArgumentException::class.java) {
             PinInputReducer.append(PinInputState(), -1)

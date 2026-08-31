@@ -37,22 +37,30 @@ test('should keep each native application in its own workspace root', async () =
 test('should keep Android TV as an independent native application', async () => {
     const rootPackage = await readJson('package.json');
     const settings = await readFile(new URL('apps/android-tv/settings.gradle.kts', ROOT_URL), 'utf8');
-    const moduleBuilds = [
-        'apps/android-tv/app/build.gradle.kts',
-        'apps/android-tv/core/designsystem/build.gradle.kts',
-        'apps/android-tv/core/network/build.gradle.kts',
-        'apps/android-tv/core/session/build.gradle.kts',
-        'apps/android-tv/feature/auth/build.gradle.kts',
-        'apps/android-tv/feature/home/build.gradle.kts',
+    const modules = [
+        ':app',
+        ':core:catalog',
+        ':core:designsystem',
+        ':core:network',
+        ':core:session',
+        ':feature:auth',
+        ':feature:detail',
+        ':feature:home',
+        ':feature:library',
+        ':feature:player',
+        ':feature:profile',
     ];
+    const moduleBuilds = modules
+        .slice(1)
+        .map((module) => `apps/android-tv/${module.slice(1).replace(':', '/')}/build.gradle.kts`)
+        .concat('apps/android-tv/app/build.gradle.kts');
 
     assert.equal(rootPackage.scripts['android-tv:build'], 'cd apps/android-tv && ./gradlew assembleDebug');
     assert.equal(rootPackage.scripts['android-tv:install'], 'cd apps/android-tv && ./gradlew installDebug');
     assert.equal(rootPackage.scripts['android-tv:lint'], 'cd apps/android-tv && ./gradlew ktlintCheck detekt lintDebug');
     assert.equal(rootPackage.scripts['android-tv:test'], 'cd apps/android-tv && ./gradlew testDebugUnitTest');
-    assert.match(
-        settings,
-        /include\(\":app\", \":core:designsystem\", \":core:network\", \":core:session\", \":feature:auth\", \":feature:home\"\)/
-    );
-    assert.deepEqual(await Promise.all(moduleBuilds.map(exists)), [true, true, true, true, true, true]);
+    for (const module of modules) {
+        assert.match(settings, new RegExp(`"${module}",`));
+    }
+    assert.deepEqual(await Promise.all(moduleBuilds.map(exists)), moduleBuilds.map(() => true));
 });
