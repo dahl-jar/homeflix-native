@@ -1,45 +1,21 @@
 package app.homeflix.tv.feature.player
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.*
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Icon
-import androidx.tv.material3.Text
+import androidx.compose.ui.unit.*
+import androidx.tv.material3.*
 import app.homeflix.tv.core.designsystem.HomeflixColors
 
 private val COLUMN_WIDTH = 520.dp
@@ -54,7 +30,6 @@ private val MENU_VERTICAL_PADDING = 120.dp
 private const val HEADER_FONT_SIZE = 24
 private const val ROW_FONT_SIZE = 18
 private const val UNSELECTED_ROW_ALPHA = 0.85f
-private val MenuBackground = Color(0xF7100E0F)
 private val FocusedRowBackground = Color.White
 private val FocusedRowContent = Color(0xFF141414)
 
@@ -63,7 +38,6 @@ enum class TrackMenuKind {
     SUBTITLES,
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TrackMenuSheet(
     kind: TrackMenuKind,
@@ -76,11 +50,7 @@ fun TrackMenuSheet(
     LaunchedEffect(Unit) { runCatching { initialFocus.requestFocus() } }
     Box(
         modifier =
-            modifier
-                .fillMaxSize()
-                .background(MenuBackground)
-                .focusGroup()
-                .focusProperties { exit = { FocusRequester.Cancel } },
+            modifier.playerMenuSurface(),
     ) {
         TrackColumn(
             title = if (kind == TrackMenuKind.AUDIO) "Audio" else "Subtitles",
@@ -166,7 +136,8 @@ private fun TrackRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    val focusState = rememberPlayerFocusState()
+    val focused = focusState.isFocused
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
@@ -174,13 +145,8 @@ private fun TrackRow(
                 .widthIn(min = COLUMN_WIDTH)
                 .clip(RoundedCornerShape(ROW_CORNER_RADIUS))
                 .background(if (focused) FocusedRowBackground else Color.Transparent)
-                .semantics { contentDescription = label }
-                .onFocusChanged { focused = it.isFocused }
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                ).padding(horizontal = ROW_HORIZONTAL_PADDING, vertical = ROW_VERTICAL_PADDING),
+                .playerFocusableClick(state = focusState, contentDescription = label, onClick = onClick)
+                .padding(horizontal = ROW_HORIZONTAL_PADDING, vertical = ROW_VERTICAL_PADDING),
     ) {
         Box(modifier = Modifier.size(CHECK_SIZE)) {
             if (selected) {

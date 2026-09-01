@@ -1,5 +1,7 @@
 package app.homeflix.tv.feature.player
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.int
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlaybackRuntimeTest {
     @Test
     fun `should load negotiated source and expose track catalog`() =
@@ -50,6 +53,114 @@ class PlaybackRuntimeTest {
             assertEquals(PlaybackStatus.PLAYING, snapshot.status)
             assertFalse(snapshot.pipeline.visible)
             assertEquals(listOf("start"), fixture.sessionGateway.calls.map(String::toString))
+        }
+
+    @Test
+    fun `should emit source parity events after negotiation`() =
+        runTest {
+            val fixture = RuntimeFixture(this)
+
+            fixture.runtime.start()
+            runCurrent()
+
+            val events =
+                fixture.telemetryEvents.map { event ->
+                    event.getValue("event").jsonPrimitive.content
+                }
+            val parityEvents = listOf("sources_loaded", "source_selected", "tracks_resolved", "source_accepted")
+            assertTrue(events.containsAll(parityEvents))
+        }
+
+    @Test
+    fun `should report pause time in seconds`() =
+        runTest {
+            val fixture = RuntimeFixture(this)
+            fixture.runtime.start()
+            val binding = fixture.bindings.single()
+            binding.callbacks.onPlayingChange(true)
+            binding.callbacks.onTimeUpdate(
+                positionSeconds = 25.0,
+                durationSeconds = 100.0,
+                bufferedSeconds = 30.0,
+                playbackAdvanced = true,
+            )
+            binding.callbacks.onPlayingChange(false)
+            runCurrent()
+
+            val pause =
+                fixture.telemetryEvents.single {
+                    it["event"]?.jsonPrimitive?.content == "playback_paused"
+                }
+            val positionSeconds =
+                pause
+                    .getValue("videoCurrentTime")
+                    .jsonPrimitive.content
+                    .toDouble()
+            assertEquals(25.0, positionSeconds)
+        }
+
+    @Test
+    fun `should report buffering duration`() =
+        runTest {
+            val fixture = RuntimeFixture(this)
+            fixture.runtime.start()
+            val callbacks = fixture.bindings.single().callbacks
+            fixture.nowMs = 1_000
+            callbacks.onPlaybackStateChange(PlaybackEngineState.BUFFERING, playWhenReady = true)
+            fixture.nowMs = 6_000
+            callbacks.onPlaybackStateChange(PlaybackEngineState.READY, playWhenReady = true)
+            runCurrent()
+
+            val started =
+                fixture.telemetryEvents.single {
+                    it["event"]?.jsonPrimitive?.content == "buffering_started"
+                }
+            val recovered =
+                fixture.telemetryEvents.single {
+                    it["event"]?.jsonPrimitive?.content == "buffering_recovered"
+                }
+            val positionSeconds =
+                started
+                    .getValue("videoCurrentTime")
+                    .jsonPrimitive.content
+                    .toDouble()
+            val bufferingDurationMs = recovered.getValue("bufferingDurationMs").jsonPrimitive.int
+            assertEquals(12.0, positionSeconds)
+            assertEquals(5_000, bufferingDurationMs)
+        }
+
+    @Test
+    fun `should sample memory once per bounded interval`() =
+        runTest {
+            val fixture =
+                RuntimeFixture(
+                    scope = this,
+                    memoryUsage = {
+                        PlaybackMemoryUsage(
+                            heapUsedBytes = 90,
+                            heapMaxBytes = 192,
+                            nativeHeapAllocatedBytes = 20,
+                            totalPssKb = 140,
+                        )
+                    },
+                )
+            fixture.runtime.start()
+
+            advanceTimeBy(10_000)
+            runCurrent()
+
+            val snapshots =
+                fixture.telemetryEvents.filter {
+                    it["event"]?.jsonPrimitive?.content == "memory_snapshot"
+                }
+            assertEquals(1, snapshots.size)
+            val heapUsedBytes =
+                snapshots
+                    .single()
+                    .getValue("heapUsedBytes")
+                    .jsonPrimitive.int
+            assertEquals(90, heapUsedBytes)
+            fixture.runtime.stop()
         }
 
     @Test
@@ -101,6 +212,63 @@ class PlaybackRuntimeTest {
                     .contains("c2.android.hevc.decoder"),
             )
             assertEquals(0, failureEvent.getValue("elapsedMs").jsonPrimitive.int)
+        }
+
+    @Test
+    fun `should recover from backward reset using last confirmed position`() =
+        runTest {
+            val fixture = RuntimeFixture(this)
+            val binding =
+                fixture.startPlayingAt(
+                    positionSeconds = 600.0,
+                    durationSeconds = 1_000.0,
+                    bufferedSeconds = 650.0,
+                )
+            binding.callbacks.onTimeUpdate(
+                positionSeconds = 0.0,
+                durationSeconds = 0.0,
+                bufferedSeconds = 0.0,
+                playbackAdvanced = false,
+            )
+            runCurrent()
+
+            fixture.assertRecoveredAt(startTimeTicks = 6_000_000_000L)
+        }
+
+    @Test
+    fun `should recover when startup remains buffering`() =
+        runTest {
+            val fixture = RuntimeFixture(this)
+            fixture.runtime.start()
+            val binding = fixture.bindings.single()
+            binding.callbacks.onPlaybackStateChange(PlaybackEngineState.BUFFERING, playWhenReady = true)
+            fixture.nowMs = 30_000
+            binding.callbacks.onTimeUpdate(
+                positionSeconds = 12.0,
+                durationSeconds = 1_000.0,
+                bufferedSeconds = 12.0,
+                playbackAdvanced = false,
+            )
+            runCurrent()
+
+            assertEquals(2, fixture.negotiations.size)
+            assertEquals(setOf("source-1"), fixture.negotiations.last().excludedSourceIds)
+        }
+
+    @Test
+    fun `should recover when source ends before expected runtime`() =
+        runTest {
+            val fixture = RuntimeFixture(this, runTimeTicks = 10_000_000_000L)
+            val binding =
+                fixture.startPlayingAt(
+                    positionSeconds = 600.0,
+                    durationSeconds = 1_000.0,
+                    bufferedSeconds = 600.0,
+                )
+            binding.callbacks.onEnded()
+            runCurrent()
+
+            fixture.assertRecoveredAt(startTimeTicks = 6_000_000_000L)
         }
 
     @Test
@@ -212,12 +380,15 @@ class PlaybackRuntimeTest {
 private class RuntimeFixture(
     scope: kotlinx.coroutines.CoroutineScope,
     playMethodOverride: PlayMethod = PlayMethod.DIRECT_PLAY,
+    runTimeTicks: Long? = null,
+    memoryUsage: (() -> PlaybackMemoryUsage)? = null,
 ) {
     val negotiations = mutableListOf<NegotiationRequest>()
     val bindings = mutableListOf<FakeBinding>()
     val sessionGateway = CallRecordingSessionGateway()
     val telemetryEvents = mutableListOf<kotlinx.serialization.json.JsonObject>()
     var failNextNegotiation = false
+    var nowMs = 0L
 
     private val telemetryGateway =
         object : TelemetryGateway {
@@ -257,6 +428,11 @@ private class RuntimeFixture(
                             scope = scope,
                         ),
                     pipeline = pipeline,
+                    monitoring =
+                        PlaybackRuntimeMonitoring(
+                            nowMs = { nowMs },
+                            memoryUsage = memoryUsage,
+                        ),
                 ),
             request =
                 PlaybackStartRequest(
@@ -272,11 +448,36 @@ private class RuntimeFixture(
                             isMissing = false,
                             resumePositionTicks = 0,
                             backdropUrl = null,
+                            runTimeTicks = runTimeTicks,
                         ),
                     userId = "user-1",
                     startTimeTicks = 120_000_000,
                 ),
         )
+
+    suspend fun startPlayingAt(
+        positionSeconds: Double,
+        durationSeconds: Double,
+        bufferedSeconds: Double,
+    ): FakeBinding {
+        runtime.start()
+        val binding = bindings.single()
+        binding.callbacks.onPlayingChange(true)
+        binding.callbacks.onFirstFrame()
+        binding.callbacks.onTimeUpdate(
+            positionSeconds = positionSeconds,
+            durationSeconds = durationSeconds,
+            bufferedSeconds = bufferedSeconds,
+            playbackAdvanced = true,
+        )
+        return binding
+    }
+
+    fun assertRecoveredAt(startTimeTicks: Long) {
+        assertEquals(2, negotiations.size)
+        assertEquals(startTimeTicks, negotiations.last().startTimeTicks)
+        assertEquals(setOf("source-1"), negotiations.last().excludedSourceIds)
+    }
 
     private fun accepted(
         request: NegotiationRequest,

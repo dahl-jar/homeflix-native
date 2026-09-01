@@ -28,6 +28,7 @@ class JellyfinClient(
 ) : JsonApiClient {
     private val normalizedBaseUrl = baseUrl.trimEnd('/')
     private val authorization = JellyfinIdentity.authorizationHeader(deviceId, version, token)
+    val mediaRequestHeaders: Map<String, String> = mapOf("Authorization" to authorization)
 
     override suspend fun get(path: String): String = get(path, emptyMap())
 

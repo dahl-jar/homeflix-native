@@ -9,22 +9,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -33,13 +20,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Text
+import androidx.compose.ui.unit.*
+import androidx.tv.material3.*
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
+import androidx.compose.ui.text.style.TextAlign as OverlayTextAlign
 
 private const val BACKDROP_ZOOM_FROM = 1.05f
 private const val BACKDROP_ZOOM_MS = 7_000
@@ -193,7 +179,7 @@ private fun OverlayTitle(itemName: String) {
         color = HomeflixColors.OnBackground,
         fontSize = TITLE_FONT_SIZE.sp,
         fontWeight = FontWeight.ExtraBold,
-        textAlign = TextAlign.Center,
+        textAlign = OverlayTextAlign.Center,
         maxLines = 2,
         modifier = Modifier.padding(top = TITLE_TOP_SPACING).widthIn(max = CONTENT_MAX_WIDTH),
     )

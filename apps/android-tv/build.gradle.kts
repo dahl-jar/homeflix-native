@@ -37,6 +37,12 @@ val pitestTargets =
                 "app.homeflix.tv.feature.player.SkipSegmentsKt",
                 "app.homeflix.tv.feature.player.NextEpisodeKt",
                 "app.homeflix.tv.feature.player.NextEpisodeCountdown",
+                "app.homeflix.tv.feature.player.PlaybackHealthMonitor",
+                "app.homeflix.tv.feature.player.PlaybackPositionTracker",
+                "app.homeflix.tv.feature.player.PlaybackRequestPolicyKt",
+                "app.homeflix.tv.feature.player.PlaybackTimeline",
+                "app.homeflix.tv.feature.player.VideoSourceFactoryKt",
+                "app.homeflix.tv.feature.player.PlaybackFormatTelemetryKt",
             ).joinToString(","),
     )
 

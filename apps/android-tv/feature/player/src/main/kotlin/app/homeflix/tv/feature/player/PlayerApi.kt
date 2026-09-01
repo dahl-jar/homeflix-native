@@ -4,6 +4,7 @@ import app.homeflix.tv.core.network.JsonApiClient
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -25,7 +26,7 @@ class PlayerApi(
     override suspend fun resolveAttempt(request: ResolveRequest): PlaybackInfoResult {
         val body =
             buildJsonObject {
-                putPlaybackBase(request.userId, request.startTimeTicks, request.deviceProfile)
+                putPlaybackBase(request.userId, request.startTimeTicks, request.deviceProfile, request.policy)
                 put("PlaybackPipelineId", request.pipelineId)
                 put("PlaybackAttemptId", request.attemptId)
                 put("PlaybackPipelineResolve", true)
@@ -45,7 +46,7 @@ class PlayerApi(
     override suspend fun releaseSource(request: ReleaseRequest): PlaybackInfoResult {
         val body =
             buildJsonObject {
-                putPlaybackBase(request.userId, request.startTimeTicks, request.deviceProfile)
+                putPlaybackBase(request.userId, request.startTimeTicks, request.deviceProfile, request.policy)
                 put("MediaSourceId", request.mediaSourceId)
                 put("PlaybackPipelineId", request.pipelineId)
                 put("PlaybackAttemptId", request.attemptId)
@@ -231,15 +232,16 @@ private fun kotlinx.serialization.json.JsonObjectBuilder.putPlaybackBase(
     userId: String,
     startTimeTicks: Long,
     deviceProfile: JsonObject,
+    policy: PlaybackRequestPolicy,
 ) {
     put("UserId", userId)
     put("DeviceProfile", deviceProfile)
     put("StartTimeTicks", startTimeTicks)
-    put("EnableDirectPlay", true)
-    put("EnableDirectStream", true)
-    put("EnableTranscoding", true)
-    put("AllowVideoStreamCopy", true)
-    put("AllowAudioStreamCopy", true)
+    put("EnableDirectPlay", policy.enableDirectPlay)
+    put("EnableDirectStream", policy.enableDirectStream)
+    put("EnableTranscoding", policy.enableTranscoding)
+    put("AllowVideoStreamCopy", policy.allowVideoStreamCopy)
+    put("AllowAudioStreamCopy", policy.allowAudioStreamCopy)
 }
 
 private fun sessionPayload(
@@ -287,6 +289,8 @@ private data class MediaSourceResponse(
     @SerialName("TranscodingUrl") val transcodingUrl: String? = null,
     @SerialName("TranscodingSubProtocol") val transcodingSubProtocol: String? = null,
     @SerialName("MediaStreams") val mediaStreams: List<MediaStreamResponse> = emptyList(),
+    @SerialName("IsRemote") val isRemote: Boolean? = null,
+    @SerialName("Container") val container: String? = null,
 ) {
     fun toMediaSource(): MediaSourceDto =
         MediaSourceDto(
@@ -297,6 +301,8 @@ private data class MediaSourceResponse(
             supportsTranscoding = supportsTranscoding,
             transcodingUrl = transcodingUrl,
             transcodingSubProtocol = transcodingSubProtocol,
+            isRemote = isRemote,
+            container = container,
             mediaStreams =
                 mediaStreams.map { stream ->
                     MediaStreamDto(
@@ -309,6 +315,12 @@ private data class MediaSourceResponse(
                         isForced = stream.isForced,
                         isHearingImpaired = stream.isHearingImpaired,
                         isExternal = stream.isExternal,
+                        codec = stream.codec,
+                        profile = stream.profile,
+                        level = stream.level,
+                        bitrate = stream.bitrate,
+                        videoRangeType = stream.videoRangeType,
+                        audioSpatialFormat = stream.audioSpatialFormat?.toString()?.trim('"'),
                     )
                 },
         )
@@ -325,6 +337,12 @@ private data class MediaStreamResponse(
     @SerialName("IsForced") val isForced: Boolean = false,
     @SerialName("IsHearingImpaired") val isHearingImpaired: Boolean = false,
     @SerialName("IsExternal") val isExternal: Boolean? = null,
+    @SerialName("Codec") val codec: String? = null,
+    @SerialName("Profile") val profile: String? = null,
+    @SerialName("Level") val level: Int? = null,
+    @SerialName("BitRate") val bitrate: Int? = null,
+    @SerialName("VideoRangeType") val videoRangeType: String? = null,
+    @SerialName("AudioSpatialFormat") val audioSpatialFormat: JsonElement? = null,
 )
 
 @Serializable

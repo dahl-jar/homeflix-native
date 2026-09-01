@@ -103,8 +103,7 @@ private fun SignedInContent(
     onChangeServer: () -> Unit,
     onSignOut: () -> Unit,
 ) {
-    val gateways =
-        rememberGateways(runtime, session, homeGateway, libraryGateway, detailGateway, ioDispatcher)
+    val gateways = rememberGateways(runtime, session, homeGateway, libraryGateway, detailGateway, ioDispatcher)
     var detailStack by remember(session) { mutableStateOf(emptyList<String>()) }
     val openDetail: (String) -> Unit = { itemId -> detailStack = detailStack + itemId }
     var playerLaunch by remember(session) { mutableStateOf<PlayerLaunch?>(null) }
@@ -119,6 +118,7 @@ private fun SignedInContent(
     if (activeLaunch != null) {
         PlayerDestination(
             gateway = gateways.player,
+            mediaRequestHeaders = gateways.mediaRequestHeaders,
             server = runtime.server,
             userId = session.userId,
             launch = activeLaunch,
@@ -185,6 +185,7 @@ private data class PlayerLaunch(
 @Composable
 private fun PlayerDestination(
     gateway: PlayerGateway,
+    mediaRequestHeaders: Map<String, String>,
     server: String,
     userId: String,
     launch: PlayerLaunch,
@@ -192,6 +193,7 @@ private fun PlayerDestination(
 ) {
     PlayerScreen(
         gateway = gateway,
+        mediaRequestHeaders = mediaRequestHeaders,
         baseUrl = server,
         userId = userId,
         itemId = launch.itemId,
@@ -205,6 +207,7 @@ private class SignedInGateways(
     val library: LibraryGateway,
     val detail: DetailGateway,
     val player: PlayerGateway,
+    val mediaRequestHeaders: Map<String, String>,
 )
 
 @Composable
@@ -230,6 +233,7 @@ private fun rememberGateways(
             library = libraryGateway ?: LibraryApi(baseUrl = runtime.server, client = client),
             detail = detailGateway ?: DetailApi(baseUrl = runtime.server, client = client),
             player = PlayerApi(baseUrl = runtime.server, client = playerClient),
+            mediaRequestHeaders = playerClient.mediaRequestHeaders,
         )
     }
 }
@@ -247,17 +251,16 @@ private fun DetailDestination(
     onPlaySelected: (String) -> Unit,
     onRestartSelected: (String) -> Unit,
 ) {
+    val navigation = DestinationNavigation(viewer, onDestinationSelected)
     BackHandler(onBack = onBack)
     DetailScreen(
         gateway = gateway,
         userId = userId,
         itemId = itemId,
-        profile = TvNavProfile(name = viewer.name, avatarUrl = viewer.avatarUrl),
+        profile = navigation.profile,
         libraries = libraries,
-        onHomeSelected = { onDestinationSelected(AuthenticatedDestination.Home) },
-        onLibrarySelected = { library ->
-            onDestinationSelected(AuthenticatedDestination.Library(library))
-        },
+        onHomeSelected = navigation.onHomeSelected,
+        onLibrarySelected = navigation.onLibrarySelected,
         onProfileSelected = { onDestinationSelected(AuthenticatedDestination.Profile) },
         onMediaSelected = onMediaSelected,
         onPlaySelected = onPlaySelected,
@@ -282,6 +285,7 @@ private fun BaseDestination(
     onChangeServer: () -> Unit,
     onSignOut: () -> Unit,
 ) {
+    val navigation = DestinationNavigation(viewer, onDestinationSelected)
     when (destination) {
         AuthenticatedDestination.Home ->
             HomeScreen(
@@ -290,9 +294,7 @@ private fun BaseDestination(
                 onMediaSelected = onMediaSelected,
                 onProfileSelected = { onDestinationSelected(AuthenticatedDestination.Profile) },
                 libraries = libraries,
-                onLibrarySelected = { library ->
-                    onDestinationSelected(AuthenticatedDestination.Library(library))
-                },
+                onLibrarySelected = navigation.onLibrarySelected,
                 cachedContent = homeCache,
                 onContentLoaded = onHomeContentLoaded,
             )
@@ -306,11 +308,9 @@ private fun BaseDestination(
                 userId = userId,
                 library = destination.library,
                 libraries = libraries,
-                profile = TvNavProfile(name = viewer.name, avatarUrl = viewer.avatarUrl),
-                onHomeSelected = { onDestinationSelected(AuthenticatedDestination.Home) },
-                onLibrarySelected = { library ->
-                    onDestinationSelected(AuthenticatedDestination.Library(library))
-                },
+                profile = navigation.profile,
+                onHomeSelected = navigation.onHomeSelected,
+                onLibrarySelected = navigation.onLibrarySelected,
                 onMediaSelected = onMediaSelected,
                 onProfileSelected = { onDestinationSelected(AuthenticatedDestination.Profile) },
             )
@@ -328,12 +328,10 @@ private fun BaseDestination(
                         serverAddress = profileServerAddress(runtime.server),
                         appVersion = BuildConfig.VERSION_NAME,
                     ),
-                profile = TvNavProfile(name = viewer.name, avatarUrl = viewer.avatarUrl),
+                profile = navigation.profile,
                 libraries = libraries,
-                onHomeSelected = { onDestinationSelected(AuthenticatedDestination.Home) },
-                onLibrarySelected = { library ->
-                    onDestinationSelected(AuthenticatedDestination.Library(library))
-                },
+                onHomeSelected = navigation.onHomeSelected,
+                onLibrarySelected = navigation.onLibrarySelected,
                 onSwitchProfile = onSignOut,
                 onChangeServer = onChangeServer,
                 ioDispatcher = ioDispatcher,
@@ -372,3 +370,14 @@ private fun AppRuntime.viewer(session: StoredSession): HomeViewer =
                     "?tag=$imageTag&quality=$PROFILE_IMAGE_QUALITY"
             },
     )
+
+private class DestinationNavigation(
+    viewer: HomeViewer,
+    private val onDestinationSelected: (AuthenticatedDestination) -> Unit,
+) {
+    val profile = TvNavProfile(name = viewer.name, avatarUrl = viewer.avatarUrl)
+    val onHomeSelected = { onDestinationSelected(AuthenticatedDestination.Home) }
+    val onLibrarySelected = { library: LibrarySummary ->
+        onDestinationSelected(AuthenticatedDestination.Library(library))
+    }
+}

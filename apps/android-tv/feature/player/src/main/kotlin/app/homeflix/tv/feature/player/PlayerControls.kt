@@ -4,56 +4,33 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.focus.*
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Icon
-import androidx.tv.material3.Text
+import androidx.compose.ui.unit.*
+import androidx.tv.material3.*
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.TvFocusStyle
+import androidx.compose.foundation.shape.CircleShape as ControlCircleShape
 
 private val TOP_BAR_PADDING = 24.dp
 private val TOP_BAR_SPACING = 8.dp
@@ -88,6 +65,7 @@ data class PlayerActionCallbacks(
     val onExit: () -> Unit,
     val onTogglePlay: () -> Unit,
     val onSeekBy: (Double) -> Unit,
+    val onToggleVideoContentMode: () -> Unit,
     val onOpenAudioMenu: () -> Unit,
     val onOpenSubtitleMenu: () -> Unit,
     val onOpenEpisodes: (() -> Unit)?,
@@ -98,13 +76,16 @@ data class PlayerActionCallbacks(
 fun PlayerControlsPanel(
     item: PlayableItem,
     snapshot: PlaybackSnapshot,
+    videoContentMode: VideoContentMode,
     callbacks: PlayerActionCallbacks,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize().background(Color.Black.copy(alpha = SCRIM_ALPHA))) {
         TopBar(
             item = item,
+            videoContentMode = videoContentMode,
             onExit = callbacks.onExit,
+            onToggleVideoContentMode = callbacks.onToggleVideoContentMode,
             modifier = Modifier.align(Alignment.TopCenter),
         )
         CenterCluster(
@@ -133,9 +114,13 @@ fun PlayerControlsPanel(
 @Composable
 private fun TopBar(
     item: PlayableItem,
+    videoContentMode: VideoContentMode,
     onExit: () -> Unit,
+    onToggleVideoContentMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val videoContentIcon =
+        if (videoContentMode == VideoContentMode.FILL) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(TOP_BAR_SPACING),
@@ -154,6 +139,11 @@ private fun TopBar(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
+        )
+        PlayerIconButton(
+            icon = videoContentIcon,
+            contentDescription = videoContentMode.actionLabel,
+            onClick = onToggleVideoContentMode,
         )
     }
 }
@@ -208,7 +198,7 @@ private fun Timeline(
                 Modifier
                     .fillMaxWidth()
                     .height(TIMELINE_HEIGHT)
-                    .clip(CircleShape)
+                    .clip(ControlCircleShape)
                     .background(TimelineTrack),
         ) {
             Box(
@@ -292,7 +282,8 @@ private fun PlayerIconButton(
     prominent: Boolean = false,
     iconSize: Dp = ICON_SIZE,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    val focusState = rememberPlayerFocusState()
+    val focused = focusState.isFocused
     val scale by
         animateFloatAsState(
             targetValue = TvFocusStyle.scale(focused),
@@ -309,13 +300,11 @@ private fun PlayerIconButton(
                     scaleX = scale
                     scaleY = scale
                     alpha = if (focused) 1f else UNFOCUSED_ALPHA
-                }.clip(CircleShape)
+                }.clip(ControlCircleShape)
                 .background(background)
-                .semantics { this.contentDescription = contentDescription }
-                .onFocusChanged { focused = it.isFocused }
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
+                .playerFocusableClick(
+                    state = focusState,
+                    contentDescription = contentDescription,
                     onClick = onClick,
                 ),
     ) {
@@ -335,7 +324,8 @@ private fun PlayerActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    val focusState = rememberPlayerFocusState()
+    val focused = focusState.isFocused
     val scale by
         animateFloatAsState(
             targetValue = TvFocusStyle.scale(focused),
@@ -351,20 +341,15 @@ private fun PlayerActionButton(
                     scaleX = scale
                     scaleY = scale
                     alpha = if (focused) 1f else UNFOCUSED_ALPHA
-                }.semantics { this.contentDescription = label }
-                .onFocusChanged { focused = it.isFocused }
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                ).padding(vertical = ACTION_BUTTON_VERTICAL_PADDING),
+                }.playerFocusableClick(state = focusState, contentDescription = label, onClick = onClick)
+                .padding(vertical = ACTION_BUTTON_VERTICAL_PADDING),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier =
                 Modifier
                     .size(ACTION_ICON_CIRCLE_SIZE)
-                    .clip(CircleShape)
+                    .clip(ControlCircleShape)
                     .background(if (focused) FocusedControlBackground else Color.Transparent),
         ) {
             Icon(

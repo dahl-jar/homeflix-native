@@ -2,20 +2,7 @@ package app.homeflix.tv.feature.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -23,30 +10,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Icon
-import androidx.tv.material3.Text
+import androidx.compose.ui.unit.*
+import androidx.tv.material3.*
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import coil3.compose.AsyncImage
 
@@ -77,14 +50,12 @@ private const val GRID_COLUMNS = 2
 private const val OVERVIEW_MAX_LINES = 3
 private const val TICKS_PER_MINUTE = 600_000_000L
 private const val MINUTES_PER_HOUR = 60
-private val MenuBackground = Color(0xF7100E0F)
 private val StillBackground = Color(0xFF211D1E)
 private val PlayBadgeBackground = Color.Black.copy(alpha = 0.72f)
 private val ProgressTrackColor = Color.White.copy(alpha = 0.35f)
 private val FocusedRowFill = Color.White.copy(alpha = 0.1f)
 private val CurrentRowFill = Color.White.copy(alpha = 0.06f)
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun EpisodeMenuSheet(
     currentItemId: String,
@@ -99,11 +70,7 @@ fun EpisodeMenuSheet(
     }
     Column(
         modifier =
-            modifier
-                .fillMaxSize()
-                .background(MenuBackground)
-                .focusGroup()
-                .focusProperties { exit = { FocusRequester.Cancel } },
+            modifier.playerMenuSurface(),
     ) {
         EpisodeMenuHeader(seriesName)
         LazyVerticalGrid(
@@ -166,7 +133,8 @@ private fun EpisodeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    val focusState = rememberPlayerFocusState()
+    val focused = focusState.isFocused
     val label = episodeLabel(episode)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -185,11 +153,9 @@ private fun EpisodeCard(
                     width = FOCUS_BORDER_WIDTH,
                     color = if (focused) HomeflixColors.Focus else Color.Transparent,
                     shape = RoundedCornerShape(ROW_CORNER_RADIUS),
-                ).semantics { contentDescription = "Play $label" }
-                .onFocusChanged { focused = it.isFocused }
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
+                ).playerFocusableClick(
+                    state = focusState,
+                    contentDescription = "Play $label",
                     onClick = onClick,
                 ).padding(ROW_PADDING),
     ) {

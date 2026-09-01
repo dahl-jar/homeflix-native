@@ -108,6 +108,7 @@ class PlaybackNegotiator(
                         rejectedSourceIds = request.excludedSourceIds,
                         preferredMediaSourceId = request.trackOverride?.mediaSourceId ?: request.preferredMediaSourceId,
                         trackOverride = request.trackOverride,
+                        policy = androidTvPlaybackPolicy(),
                     ),
                 )
             } finally {
@@ -163,6 +164,7 @@ class PlaybackNegotiator(
                     pipelineDecision = resolution.pipelineDecision,
                     audioStreamIndex = resolution.audioStreamIndex,
                     subtitleStreamIndex = resolution.subtitleStreamIndex,
+                    policy = androidTvPlaybackPolicy(resolution.mediaSource),
                 ),
             )
         val mediaSource =

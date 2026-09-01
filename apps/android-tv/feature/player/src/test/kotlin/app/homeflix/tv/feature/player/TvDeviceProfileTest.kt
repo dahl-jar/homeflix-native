@@ -3,9 +3,7 @@ package app.homeflix.tv.feature.player
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class TvDeviceProfileTest {
@@ -24,32 +22,32 @@ class TvDeviceProfileTest {
     }
 
     @Test
-    fun `should keep sdr and backward compatible dovi range without hdr display`() {
+    fun `should keep only sdr without hdr display`() {
         val ranges = hevcRangeTypes(tvDeviceProfile(sdrCapabilities()))
 
-        assertEquals(setOf("SDR", "DOVIWithSDR"), ranges)
+        assertEquals(setOf("SDR"), ranges)
     }
 
     @Test
-    fun `should add hdr fallback ranges for hdr10 display without dolby vision`() {
+    fun `should not advertise hdr10 plus or dovi for hdr10 display`() {
         val ranges =
             hevcRangeTypes(tvDeviceProfile(sdrCapabilities().copy(displayHdr10 = true, displayHlg = true)))
 
-        assertTrue(
-            ranges.containsAll(
-                setOf(
-                    "HDR10",
-                    "HDR10Plus",
-                    "HLG",
-                    "DOVIWithHDR10",
-                    "DOVIWithHDR10Plus",
-                    "DOVIWithEL",
-                    "DOVIWithELHDR10Plus",
-                    "DOVIWithHLG",
-                ),
-            ),
-        )
+        assertEquals(setOf("SDR", "HDR10", "HLG"), ranges)
+        assertFalse(ranges.contains("HDR10Plus"))
         assertFalse(ranges.contains("DOVI"))
+    }
+
+    @Test
+    fun `should advertise hdr10 plus only when display supports it`() {
+        val ranges =
+            hevcRangeTypes(
+                tvDeviceProfile(
+                    sdrCapabilities().copy(displayHdr10 = true, displayHdr10Plus = true),
+                ),
+            )
+
+        assertTrue(ranges.contains("HDR10Plus"))
     }
 
     @Test
@@ -66,7 +64,8 @@ class TvDeviceProfileTest {
         val profileFiveRanges =
             hevcRangeTypes(tvDeviceProfile(doViDisplay.copy(dolbyVisionProfiles = setOf(5, 8))))
 
-        assertTrue(ranges.containsAll(setOf("DOVIWithHDR10", "DOVIWithHLG", "DOVIWithSDR", "DOVIWithHDR10Plus")))
+        assertTrue(ranges.containsAll(setOf("DOVIWithHDR10", "DOVIWithHLG", "DOVIWithSDR")))
+        assertFalse(ranges.contains("DOVIWithHDR10Plus"))
         assertFalse(ranges.contains("DOVI"))
         assertFalse(ranges.contains("DOVIWithEL"))
         assertTrue(profileFiveRanges.contains("DOVI"))
@@ -110,8 +109,18 @@ class TvDeviceProfileTest {
 
     @Test
     fun `should direct play only probed video codecs`() {
+        val profile =
+            tvDeviceProfile(
+                sdrCapabilities().copy(
+                    videoDecoders =
+                        listOf(
+                            decoder("h264"),
+                            decoder("hevc"),
+                        ),
+                ),
+            )
         val videoCodecs =
-            tvDeviceProfile(sdrCapabilities().copy(videoCodecs = setOf("h264", "hevc")))
+            profile
                 .jsonObject
                 .getValue("DirectPlayProfiles")
                 .jsonArray
@@ -122,6 +131,35 @@ class TvDeviceProfileTest {
                 .content
 
         assertEquals(setOf("h264", "hevc"), videoCodecs.split(",").toSet())
+    }
+
+    @Test
+    fun `should retain avi direct play through bundled extractor`() {
+        val containers =
+            tvDeviceProfile(sdrCapabilities())
+                .getValue("DirectPlayProfiles")
+                .jsonArray
+                .single()
+                .jsonObject
+                .getValue("Container")
+                .jsonPrimitive
+                .content
+                .split(",")
+
+        assertTrue("avi" in containers)
+    }
+
+    @Test
+    fun `should serialize decoder and audio limits`() {
+        val profile = tvDeviceProfile(sdrCapabilities())
+        val hevcConditions = codecConditions(profile, type = "Video", codec = "hevc")
+        val eac3Conditions = codecConditions(profile, type = "Audio", codec = "eac3")
+
+        assertEquals("3840", hevcConditions.getValue("Width"))
+        assertEquals("2160", hevcConditions.getValue("Height"))
+        assertEquals("60", hevcConditions.getValue("VideoFramerate"))
+        assertEquals("35000000", hevcConditions.getValue("VideoBitrate"))
+        assertEquals("8", eac3Conditions.getValue("AudioChannels"))
     }
 
     @Test
@@ -150,7 +188,13 @@ class TvDeviceProfileTest {
 
     private fun sdrCapabilities(): TvMediaCapabilities =
         TvMediaCapabilities(
-            videoCodecs = setOf("h264", "hevc", "vp9", "av1"),
+            videoDecoders =
+                listOf(
+                    decoder("h264"),
+                    decoder("hevc"),
+                    decoder("vp9"),
+                    decoder("av1"),
+                ),
             dolbyVisionProfiles = emptySet(),
             displayDolbyVision = false,
             displayHdr10 = false,
@@ -158,6 +202,15 @@ class TvDeviceProfileTest {
             displayHdr10Plus = false,
             audioPassthroughCodecs = emptySet(),
             maxAudioChannels = 8,
+        )
+
+    private fun decoder(codec: String): VideoDecoderCapability =
+        VideoDecoderCapability(
+            codec = codec,
+            maxWidth = 3_840,
+            maxHeight = 2_160,
+            maxFrameRate = 60,
+            maxBitrate = 35_000_000,
         )
 
     private fun directAudioCodecs(profile: kotlinx.serialization.json.JsonObject): Set<String> =
@@ -196,4 +249,23 @@ class TvDeviceProfileTest {
             .split("|")
             .toSet()
     }
+
+    private fun codecConditions(
+        profile: kotlinx.serialization.json.JsonObject,
+        type: String,
+        codec: String,
+    ): Map<String, String> =
+        profile
+            .getValue("CodecProfiles")
+            .jsonArray
+            .map(kotlinx.serialization.json.JsonElement::jsonObject)
+            .single {
+                it.getValue("Type").jsonPrimitive.content == type &&
+                    it.getValue("Codec").jsonPrimitive.content == codec
+            }.getValue("Conditions")
+            .jsonArray
+            .map(kotlinx.serialization.json.JsonElement::jsonObject)
+            .associate {
+                it.getValue("Property").jsonPrimitive.content to it.getValue("Value").jsonPrimitive.content
+            }
 }

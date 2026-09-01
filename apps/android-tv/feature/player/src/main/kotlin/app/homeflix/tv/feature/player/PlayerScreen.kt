@@ -3,24 +3,9 @@ package app.homeflix.tv.feature.player
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -33,10 +18,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.compose.ContentFrame
 import androidx.tv.material3.Text
 import app.homeflix.tv.core.designsystem.HomeflixColors
 import app.homeflix.tv.core.designsystem.TvFocusAppearance
@@ -72,6 +59,7 @@ private sealed interface PlayerBootstrap {
 fun PlayerScreen(
     gateway: PlayerGateway,
     baseUrl: String,
+    mediaRequestHeaders: Map<String, String> = emptyMap(),
     userId: String,
     itemId: String,
     onExit: () -> Unit,
@@ -126,6 +114,7 @@ fun PlayerScreen(
                     PlayerPlayback(
                         gateway = gateway,
                         baseUrl = baseUrl,
+                        mediaRequestHeaders = mediaRequestHeaders,
                         userId = userId,
                         item = current.item,
                         onAdvance = { next -> bootstrap = PlayerBootstrap.Ready(next) },
@@ -142,6 +131,7 @@ fun PlayerScreen(
 private fun PlayerPlayback(
     gateway: PlayerGateway,
     baseUrl: String,
+    mediaRequestHeaders: Map<String, String>,
     userId: String,
     item: PlayableItem,
     onAdvance: (PlayableItem) -> Unit,
@@ -149,7 +139,29 @@ private fun PlayerPlayback(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val player = remember { ExoPlayer.Builder(context).build() }
+    val player =
+        remember(mediaRequestHeaders) {
+            val dataSourceFactory =
+                DefaultHttpDataSource
+                    .Factory()
+                    .setDefaultRequestProperties(mediaRequestHeaders)
+            val loadControl =
+                DefaultLoadControl
+                    .Builder()
+                    .setBufferDurationsMs(
+                        PlaybackMemoryBudget.MINIMUM_BUFFER_MS,
+                        PlaybackMemoryBudget.MAXIMUM_BUFFER_MS,
+                        PlaybackMemoryBudget.BUFFER_FOR_PLAYBACK_MS,
+                        PlaybackMemoryBudget.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+                    ).setTargetBufferBytes(PlaybackMemoryBudget.TARGET_BUFFER_BYTES)
+                    .setPrioritizeTimeOverSizeThresholds(false)
+                    .build()
+            ExoPlayer
+                .Builder(context)
+                .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+                .setLoadControl(loadControl)
+                .build()
+        }
     val runtime =
         remember {
             val deviceProfile = tvDeviceProfile(probeTvMediaCapabilities(context))
@@ -170,6 +182,7 @@ private fun PlayerPlayback(
                         createReporter = { reporterContext -> PlaybackSessionReporter(gateway, reporterContext) },
                         telemetry = PlaybackTelemetry(gateway = gateway, pipeline = pipeline, scope = scope),
                         pipeline = pipeline,
+                        monitoring = PlaybackRuntimeMonitoring(memoryUsage = ::capturePlaybackMemoryUsage),
                     ),
                 request =
                     PlaybackStartRequest(
@@ -186,6 +199,7 @@ private fun PlayerPlayback(
 
     val snapshot by runtime.snapshot.collectAsState()
     val controls = remember { PlayerControlsState() }
+    var videoContentMode by remember { mutableStateOf(VideoContentMode.FIT) }
     var menu by remember { mutableStateOf<TrackMenuKind?>(null) }
     var episodeMenuOpen by remember { mutableStateOf(false) }
     var seriesEpisodes by remember { mutableStateOf<List<PlayableItem>>(emptyList()) }
@@ -273,8 +287,9 @@ private fun PlayerPlayback(
                 }.focusRequester(rootFocus)
                 .focusable(),
     ) {
-        PlayerSurface(
+        ContentFrame(
             player = player,
+            contentScale = videoContentMode.contentScale,
             modifier = Modifier.fillMaxSize().alpha(if (snapshot.pipeline.videoVisible) 1f else 0f),
         )
 
@@ -282,6 +297,7 @@ private fun PlayerPlayback(
             PlayerControlsPanel(
                 item = item,
                 snapshot = snapshot,
+                videoContentMode = videoContentMode,
                 callbacks =
                     PlayerActionCallbacks(
                         onExit = exit,
@@ -291,6 +307,10 @@ private fun PlayerPlayback(
                         },
                         onSeekBy = { seconds ->
                             runtime.seekBy(seconds)
+                            controls.show()
+                        },
+                        onToggleVideoContentMode = {
+                            videoContentMode = videoContentMode.next()
                             controls.show()
                         },
                         onOpenAudioMenu = { menu = TrackMenuKind.AUDIO },

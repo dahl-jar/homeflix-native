@@ -118,4 +118,20 @@ class JellyfinClientTest {
             assertEquals("user-one", request.url.queryParameter("userId"))
             assertTrue(request.headers["Authorization"].orEmpty().contains("Token=\"access-token\""))
         }
+
+    @Test
+    fun `should expose authenticated media request headers`() {
+        val client =
+            JellyfinClient(
+                baseUrl = server.url("/").toString().removeSuffix("/"),
+                deviceId = "device-one",
+                version = "1.0.0",
+                token = "access-token",
+            )
+
+        val authorization = client.mediaRequestHeaders.getValue("Authorization")
+
+        assertTrue(authorization.contains("Device=\"Android TV\""))
+        assertTrue(authorization.contains("Token=\"access-token\""))
+    }
 }

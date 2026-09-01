@@ -18,7 +18,40 @@ data class ReleasedPlayback(
 data class PlayerMediaSource(
     val url: String,
     val hls: Boolean,
+    val timelineMode: TimelineMode,
 )
+
+enum class TimelineMode {
+    ABSOLUTE_ITEM,
+    SERVER_PRESEEKED,
+}
+
+data class PlaybackTimeline(
+    val mode: TimelineMode,
+    val originSeconds: Double,
+) {
+    fun playerPositionSeconds(itemPositionSeconds: Double): Double =
+        when (mode) {
+            TimelineMode.ABSOLUTE_ITEM -> itemPositionSeconds
+            TimelineMode.SERVER_PRESEEKED -> (itemPositionSeconds - originSeconds).coerceAtLeast(0.0)
+        }
+
+    fun itemPositionSeconds(playerPositionSeconds: Double): Double =
+        when (mode) {
+            TimelineMode.ABSOLUTE_ITEM -> playerPositionSeconds
+            TimelineMode.SERVER_PRESEEKED -> originSeconds + playerPositionSeconds
+        }
+
+    fun itemDurationSeconds(playerDurationSeconds: Double): Double =
+        when {
+            playerDurationSeconds <= 0.0 -> 0.0
+            mode == TimelineMode.ABSOLUTE_ITEM -> playerDurationSeconds
+            else -> originSeconds + playerDurationSeconds
+        }
+}
+
+fun PlayerMediaSource.timeline(itemStartSeconds: Double): PlaybackTimeline =
+    PlaybackTimeline(mode = timelineMode, originSeconds = itemStartSeconds)
 
 private val HLS_URL_PATTERN = Regex("""\.m3u8($|\?)""", RegexOption.IGNORE_CASE)
 
@@ -49,14 +82,17 @@ fun videoSource(
         return PlayerMediaSource(
             url = "$normalizedBase/Videos/${playback.itemId}/stream?$query",
             hls = false,
+            timelineMode = TimelineMode.ABSOLUTE_ITEM,
         )
     }
     val transcodingUrl =
         checkNotNull(playback.transcodingUrl) { "released source has no transcoding url" }
     val absolute =
         if (transcodingUrl.startsWith("http")) transcodingUrl else "$normalizedBase$transcodingUrl"
+    val hls = HLS_URL_PATTERN.containsMatchIn(absolute) || playback.transcodingSubProtocol == "hls"
     return PlayerMediaSource(
         url = absolute,
-        hls = HLS_URL_PATTERN.containsMatchIn(absolute) || playback.transcodingSubProtocol == "hls",
+        hls = hls,
+        timelineMode = if (hls) TimelineMode.ABSOLUTE_ITEM else TimelineMode.SERVER_PRESEEKED,
     )
 }

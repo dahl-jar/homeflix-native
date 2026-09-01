@@ -37,6 +37,12 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -88,6 +94,10 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.coroutines.android)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)

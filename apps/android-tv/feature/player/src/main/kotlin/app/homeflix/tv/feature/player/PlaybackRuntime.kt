@@ -2,9 +2,12 @@ package app.homeflix.tv.feature.player
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 private const val TICKS_PER_SECOND = 10_000_000L
@@ -46,6 +49,23 @@ interface PlayerCallbacks {
     fun onReady(durationSeconds: Double)
 
     fun onPlayingChange(isPlaying: Boolean)
+
+    fun onPlaybackStateChange(
+        state: PlaybackEngineState,
+        playWhenReady: Boolean,
+    )
+
+    fun onFirstFrame()
+
+    fun onFormatSelected(
+        trackType: String,
+        fields: Map<String, Any?>,
+    )
+
+    fun onDecoderInitialized(
+        trackType: String,
+        decoderName: String,
+    )
 
     fun onTimeUpdate(
         positionSeconds: Double,
@@ -129,6 +149,12 @@ class PlaybackRuntimeDependencies(
     val createReporter: (SessionContext) -> PlaybackSessionReporter,
     val telemetry: PlaybackTelemetry,
     val pipeline: PlaybackPipelineIds,
+    val monitoring: PlaybackRuntimeMonitoring = PlaybackRuntimeMonitoring(),
+)
+
+data class PlaybackRuntimeMonitoring(
+    val nowMs: () -> Long = System::currentTimeMillis,
+    val memoryUsage: (() -> PlaybackMemoryUsage)? = null,
 )
 
 @Suppress("TooManyFunctions")
@@ -147,8 +173,15 @@ class PlaybackRuntime(
     private var binding: PlayerBinding? = null
     private var closed = false
     private var recovering = false
+    private var pendingRecoveryError: PlayerErrorDetails? = null
     private var suppressPipelineEvents = false
     private var started = false
+    private var firstFrameRendered = false
+    private var positionTracker: PlaybackPositionTracker? = null
+    private var healthMonitor: PlaybackHealthMonitor? = null
+    private var memoryMonitorJob: Job? = null
+    private var engineState = PlaybackEngineState.IDLE
+    private var bufferingStartedAtMs: Long? = null
     private val rejectedSourceIds = mutableSetOf<String>()
 
     suspend fun start() {
@@ -156,6 +189,7 @@ class PlaybackRuntime(
         update { it.copy(status = PlaybackStatus.LOADING, reason = null) }
         try {
             loadAccepted(negotiateNext(request.startTimeTicks, trackOverride = null))
+            startMemoryMonitoring()
         } catch (failure: CancellationException) {
             throw failure
         } catch (expected: Exception) {
@@ -173,10 +207,12 @@ class PlaybackRuntime(
     }
 
     fun seekBy(seconds: Double) {
+        positionTracker?.armUserSeek((state.value.positionSeconds + seconds).coerceAtLeast(0.0))
         binding?.seekBy(seconds)
     }
 
     fun seekTo(seconds: Double) {
+        positionTracker?.armUserSeek(seconds)
         binding?.seekTo(seconds)
     }
 
@@ -237,6 +273,8 @@ class PlaybackRuntime(
             ),
         )
         binding?.dispose()
+        memoryMonitorJob?.cancel()
+        memoryMonitorJob = null
         binding = null
         update { it.copy(status = status) }
     }
@@ -253,23 +291,58 @@ class PlaybackRuntime(
     private suspend fun negotiateNext(
         resumeTicks: Long,
         trackOverride: TrackOverride?,
-    ): AcceptedPlayback =
-        dependencies.negotiate(
-            NegotiationRequest(
-                item = request.item,
-                userId = request.userId,
-                startTimeTicks = resumeTicks,
-                excludedSourceIds = rejectedSourceIds.toSet(),
-                preferredMediaSourceId = request.preferredMediaSourceId,
-                trackOverride = trackOverride,
-                pipeline = dependencies.pipeline,
+    ): AcceptedPlayback {
+        val next =
+            dependencies.negotiate(
+                NegotiationRequest(
+                    item = request.item,
+                    userId = request.userId,
+                    startTimeTicks = resumeTicks,
+                    excludedSourceIds = rejectedSourceIds.toSet(),
+                    preferredMediaSourceId = request.preferredMediaSourceId,
+                    trackOverride = trackOverride,
+                    pipeline = dependencies.pipeline,
+                ),
+                ::advancePipeline,
+            )
+        telemetry.log("sources_loaded", mapOf("sourceCount" to next.sourceCount))
+        telemetry.log(
+            "source_selected",
+            mapOf(
+                "playMethod" to next.released.playMethod.wireName,
+                "isRemote" to next.mediaSource.isRemote,
+                "container" to next.mediaSource.container,
             ),
-            ::advancePipeline,
         )
+        telemetry.log(
+            "tracks_resolved",
+            mapOf(
+                "audioStreamIndex" to next.released.audioStreamIndex,
+                "subtitleStreamIndex" to next.released.subtitleStreamIndex,
+                "audioTrackCount" to next.mediaSource.mediaStreams.count { it.type == "Audio" },
+                "subtitleTrackCount" to next.mediaSource.mediaStreams.count { it.type == "Subtitle" },
+            ),
+        )
+        telemetry.log(
+            "source_accepted",
+            mapOf(
+                "videoDelivery" to next.videoDelivery,
+                "audioDelivery" to next.audioDelivery,
+                "sourceWidth" to next.sourceWidth,
+                "sourceHeight" to next.sourceHeight,
+            ),
+        )
+        return next
+    }
 
     private suspend fun loadAccepted(next: AcceptedPlayback) {
         accepted = next
         started = false
+        firstFrameRendered = false
+        positionTracker = PlaybackPositionTracker(next.startSeconds)
+        healthMonitor = PlaybackHealthMonitor().also { it.onLoad(dependencies.monitoring.nowMs()) }
+        engineState = PlaybackEngineState.IDLE
+        bufferingStartedAtMs = null
         reporter = dependencies.createReporter(sessionContext(next))
         val nextBinding = dependencies.bindPlayer(Callbacks())
         binding = nextBinding
@@ -277,6 +350,8 @@ class PlaybackRuntime(
             it.copy(
                 status = PlaybackStatus.LOADING,
                 reason = null,
+                positionSeconds = next.startSeconds,
+                bufferedSeconds = next.startSeconds,
                 tracks =
                     trackCatalog(
                         mediaSource = next.mediaSource,
@@ -332,36 +407,51 @@ class PlaybackRuntime(
     }
 
     private suspend fun recover(error: PlayerErrorDetails) {
-        if (closed || recovering) return
-        val (current, failedBinding) = activePlayback() ?: return
+        if (closed) return
+        pendingRecoveryError = error
+        if (recovering) return
         recovering = true
         try {
-            rejectedSourceIds.add(current.released.mediaSourceId)
-            telemetry.log(
-                "player_failed",
-                error.telemetry.ifEmpty { mapOf("errorMessage" to error.reason) },
-            )
-            val resumeTicks = positionTicks(failedBinding)
-            advancePipeline(PipelineEvent.Failed(SOURCE_FAILED_MESSAGE))
-            update { it.copy(status = PlaybackStatus.RECOVERING, reason = SOURCE_FAILED_MESSAGE) }
-            reportStopped(failed = true)
-            failedBinding.dispose()
-            binding = null
-            advancePipeline(PipelineEvent.Retry)
-            val next =
-                try {
-                    negotiateNext(resumeTicks, trackOverride = null)
-                } catch (failure: CancellationException) {
-                    throw failure
-                } catch (_: Exception) {
-                    failPlayback("no compatible playback source")
-                    telemetry.log("playback_failed", mapOf("reason" to "no_compatible_source"))
-                    null
-                }
-            if (next != null && !closed) loadAccepted(next)
+            var canContinue = true
+            while (!closed && pendingRecoveryError != null && canContinue) {
+                val currentError = checkNotNull(pendingRecoveryError)
+                pendingRecoveryError = null
+                canContinue = recoverNextSource(currentError)
+            }
         } finally {
             recovering = false
+            val pending = pendingRecoveryError
+            if (!closed && pending != null) fireAndForget { recover(pending) }
         }
+    }
+
+    private suspend fun recoverNextSource(error: PlayerErrorDetails): Boolean {
+        val (current, failedBinding) = activePlayback() ?: return false
+        rejectedSourceIds.add(current.released.mediaSourceId)
+        telemetry.log(
+            "player_failed",
+            error.telemetry.ifEmpty { mapOf("errorMessage" to error.reason) },
+        )
+        val resumeTicks = positionTicks(failedBinding)
+        advancePipeline(PipelineEvent.Failed(SOURCE_FAILED_MESSAGE))
+        update { it.copy(status = PlaybackStatus.RECOVERING, reason = SOURCE_FAILED_MESSAGE) }
+        reportStopped(failed = true)
+        failedBinding.dispose()
+        binding = null
+        advancePipeline(PipelineEvent.Retry)
+        val next =
+            try {
+                negotiateNext(resumeTicks, trackOverride = null)
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (_: Exception) {
+                failPlayback("no compatible playback source")
+                telemetry.log("playback_failed", mapOf("reason" to "no_compatible_source"))
+                null
+            }
+        val canLoad = next != null && !closed
+        if (canLoad) loadAccepted(checkNotNull(next))
+        return canLoad
     }
 
     private fun failPlayback(reason: String) {
@@ -391,8 +481,9 @@ class PlaybackRuntime(
         failed: Boolean = false,
     ): SessionSnapshot {
         val player = activeBinding.snapshot()
+        val positionSeconds = confirmedPositionSeconds(player.positionSeconds)
         return SessionSnapshot(
-            positionTicks = (player.positionSeconds * TICKS_PER_SECOND).toLong(),
+            positionTicks = (positionSeconds * TICKS_PER_SECOND).toLong(),
             isPaused = player.isPaused,
             failed = failed,
         )
@@ -405,7 +496,10 @@ class PlaybackRuntime(
     }
 
     private fun positionTicks(activeBinding: PlayerBinding): Long =
-        (activeBinding.snapshot().positionSeconds * TICKS_PER_SECOND).toLong()
+        (confirmedPositionSeconds(activeBinding.snapshot().positionSeconds) * TICKS_PER_SECOND).toLong()
+
+    private fun confirmedPositionSeconds(observedPositionSeconds: Double): Double =
+        positionTracker?.update(observedPositionSeconds)?.positionSeconds ?: observedPositionSeconds
 
     private fun selectedAudioIndex(): Int =
         state.value.tracks.selectedAudioTrack
@@ -459,6 +553,30 @@ class PlaybackRuntime(
         scope.launch { block() }
     }
 
+    private fun startMemoryMonitoring() {
+        val memoryUsage = dependencies.monitoring.memoryUsage ?: return
+        if (memoryMonitorJob != null) return
+        memoryMonitorJob =
+            scope.launch {
+                while (isActive && !closed) {
+                    delay(PLAYBACK_MEMORY_SAMPLE_INTERVAL_MS)
+                    if (!closed) {
+                        val current = state.value
+                        telemetry.log(
+                            "memory_snapshot",
+                            playbackMemoryTelemetry(
+                                usage = memoryUsage(),
+                                playbackStatus = current.status,
+                                engineState = engineState,
+                                positionSeconds = current.positionSeconds,
+                                bufferedSeconds = current.bufferedSeconds,
+                            ),
+                        )
+                    }
+                }
+            }
+    }
+
     private inner class Callbacks : PlayerCallbacks {
         override fun onReady(durationSeconds: Double) {
             if (closed) return
@@ -475,7 +593,10 @@ class PlaybackRuntime(
                 update { it.copy(status = PlaybackStatus.PAUSED) }
                 val activeBinding = binding ?: return
                 val current = sessionSnapshot(activeBinding)
-                telemetry.log("playback_paused", mapOf("videoCurrentTime" to current.positionTicks))
+                telemetry.log(
+                    "playback_paused",
+                    mapOf("videoCurrentTime" to state.value.positionSeconds),
+                )
                 reporter?.let { activeReporter ->
                     fireAndForget { activeReporter.progress(current, force = true) }
                 }
@@ -489,27 +610,129 @@ class PlaybackRuntime(
             playbackAdvanced: Boolean,
         ) {
             if (closed) return
+            val decision = positionTracker?.update(positionSeconds) ?: PositionDecision(true, positionSeconds)
+            if (!decision.accepted) {
+                handleRejectedPosition(decision)
+            } else {
+                handleAcceptedPosition(decision, durationSeconds, bufferedSeconds, playbackAdvanced)
+            }
+        }
+
+        private fun handleRejectedPosition(decision: PositionDecision) {
+            update { it.copy(positionSeconds = decision.positionSeconds) }
+            if (started || firstFrameRendered) recoverFromHealthFailure(PlaybackHealthFailure.BACKWARD_JUMP)
+        }
+
+        private fun handleAcceptedPosition(
+            decision: PositionDecision,
+            durationSeconds: Double,
+            bufferedSeconds: Double,
+            playbackAdvanced: Boolean,
+        ) {
             update {
                 it.copy(
-                    positionSeconds = positionSeconds,
+                    positionSeconds = decision.positionSeconds,
                     durationSeconds = durationSeconds,
                     bufferedSeconds = bufferedSeconds,
                 )
             }
+            healthMonitor?.onPosition(decision.positionSeconds, dependencies.monitoring.nowMs())
+            healthMonitor?.evaluate(dependencies.monitoring.nowMs())?.let(::recoverFromHealthFailure)
             if (playbackAdvanced) startPlaybackOnce()
-            val activeBinding = binding ?: return
-            reporter?.let { activeReporter ->
-                val current = sessionSnapshot(activeBinding)
-                fireAndForget { activeReporter.progress(current) }
+            val activeBinding = binding
+            if (activeBinding != null) {
+                reporter?.let { activeReporter ->
+                    val current = sessionSnapshot(activeBinding)
+                    fireAndForget { activeReporter.progress(current) }
+                }
             }
         }
 
         override fun onEnded() {
-            fireAndForget { stop(PlaybackStatus.ENDED) }
+            val expectedDurationSeconds =
+                request.item.runTimeTicks
+                    ?.toDouble()
+                    ?.div(TICKS_PER_SECOND)
+                    ?: state.value.durationSeconds
+            val positionSeconds = positionTracker?.confirmedPositionSeconds ?: state.value.positionSeconds
+            val failure = healthMonitor?.onEnded(positionSeconds, expectedDurationSeconds)
+            if (failure == null) {
+                fireAndForget { stop(PlaybackStatus.ENDED) }
+            } else {
+                recoverFromHealthFailure(failure)
+            }
         }
 
         override fun onError(error: PlayerErrorDetails) {
             fireAndForget { recover(error) }
+        }
+
+        override fun onPlaybackStateChange(
+            state: PlaybackEngineState,
+            playWhenReady: Boolean,
+        ) {
+            engineState = state
+            trackBuffering(state, playWhenReady)
+            healthMonitor?.onState(state, playWhenReady, dependencies.monitoring.nowMs())
+            healthMonitor?.evaluate(dependencies.monitoring.nowMs())?.let(::recoverFromHealthFailure)
+        }
+
+        private fun trackBuffering(
+            state: PlaybackEngineState,
+            playWhenReady: Boolean,
+        ) {
+            val nowMs = dependencies.monitoring.nowMs()
+            when {
+                state == PlaybackEngineState.BUFFERING && playWhenReady && bufferingStartedAtMs == null -> {
+                    bufferingStartedAtMs = nowMs
+                    val positionSeconds = this@PlaybackRuntime.state.value.positionSeconds
+                    telemetry.log("buffering_started", mapOf("videoCurrentTime" to positionSeconds))
+                }
+                state == PlaybackEngineState.READY && bufferingStartedAtMs != null -> {
+                    val startedAtMs = checkNotNull(bufferingStartedAtMs)
+                    bufferingStartedAtMs = null
+                    telemetry.log(
+                        "buffering_recovered",
+                        mapOf(
+                            "videoCurrentTime" to this@PlaybackRuntime.state.value.positionSeconds,
+                            "bufferingDurationMs" to (nowMs - startedAtMs).coerceAtLeast(0),
+                        ),
+                    )
+                }
+                !playWhenReady -> bufferingStartedAtMs = null
+            }
+        }
+
+        override fun onFirstFrame() {
+            firstFrameRendered = true
+            healthMonitor?.onFirstFrame(dependencies.monitoring.nowMs())
+            telemetry.log("first_frame_rendered")
+        }
+
+        override fun onFormatSelected(
+            trackType: String,
+            fields: Map<String, Any?>,
+        ) {
+            telemetry.log("${trackType}_format_selected", fields)
+        }
+
+        override fun onDecoderInitialized(
+            trackType: String,
+            decoderName: String,
+        ) {
+            telemetry.log("${trackType}_decoder_initialized", mapOf("decoderName" to decoderName))
+        }
+
+        private fun recoverFromHealthFailure(failure: PlaybackHealthFailure) {
+            val reason = failure.name.lowercase()
+            fireAndForget {
+                recover(
+                    PlayerErrorDetails(
+                        reason = reason,
+                        telemetry = mapOf("failureType" to reason),
+                    ),
+                )
+            }
         }
 
         private fun statusAfterReady(): PlaybackStatus = if (started) state.value.status else PlaybackStatus.READY

@@ -1,5 +1,9 @@
 package app.homeflix.tv.feature.player
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -10,6 +14,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import app.homeflix.tv.core.designsystem.HomeflixTheme
@@ -92,11 +97,13 @@ class PlayerScreenTest {
                 PlayerControlsPanel(
                     item = movieItem(),
                     snapshot = playingSnapshot(),
+                    videoContentMode = VideoContentMode.FIT,
                     callbacks =
                         PlayerActionCallbacks(
                             onExit = {},
                             onTogglePlay = {},
                             onSeekBy = {},
+                            onToggleVideoContentMode = {},
                             onOpenAudioMenu = {},
                             onOpenSubtitleMenu = {},
                             onOpenEpisodes = null,
@@ -127,6 +134,34 @@ class PlayerScreenTest {
             pressKey(Key.DirectionRight)
         }
         composeRule.onNodeWithContentDescription("Subtitles").assertIsFocused()
+    }
+
+    @Test
+    fun shouldToggleVideoFitAction() {
+        composeRule.setContent {
+            var videoContentMode by remember { mutableStateOf(VideoContentMode.FIT) }
+            HomeflixTheme {
+                PlayerControlsPanel(
+                    item = movieItem(),
+                    snapshot = playingSnapshot(),
+                    videoContentMode = videoContentMode,
+                    callbacks =
+                        PlayerActionCallbacks(
+                            onExit = {},
+                            onTogglePlay = {},
+                            onSeekBy = {},
+                            onToggleVideoContentMode = { videoContentMode = videoContentMode.next() },
+                            onOpenAudioMenu = {},
+                            onOpenSubtitleMenu = {},
+                            onOpenEpisodes = null,
+                            onPlayNext = null,
+                        ),
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Fill screen").performClick()
+        composeRule.onNodeWithContentDescription("Fit video").assertIsDisplayed()
     }
 
     private fun isFocused(description: String): Boolean =

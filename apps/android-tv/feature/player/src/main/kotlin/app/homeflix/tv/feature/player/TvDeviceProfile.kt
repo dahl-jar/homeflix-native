@@ -9,22 +9,22 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
 private const val PROFILE_NAME = "Homeflix Android TV"
-private const val MAX_STREAMING_BITRATE = 120_000_000
+private const val DEFAULT_MAX_STREAMING_BITRATE = 10_000_000
 private const val DIRECT_PLAY_CONTAINERS = "mkv,mp4,m4v,mov,webm,ts,avi"
 private val BASE_AUDIO_CODECS = listOf("aac", "mp3", "ac3", "eac3", "opus", "vorbis", "flac")
 private val PASSTHROUGH_AUDIO_CODECS = listOf("truehd", "dts")
 private const val TRANSCODE_VIDEO_CODECS = "h264,hevc"
 private const val TRANSCODE_AUDIO_CODECS = "aac,ac3,eac3"
 private val HDR_CAPABLE_CODECS = setOf("hevc", "vp9", "av1")
-private const val DOLBY_VISION_PROFILE_FIVE = 5
-private const val DOLBY_VISION_PROFILE_SEVEN = 7
-private const val DOLBY_VISION_PROFILE_EIGHT = 8
 
 fun tvDeviceProfile(capabilities: TvMediaCapabilities): JsonObject =
     buildJsonObject {
         put("Name", PROFILE_NAME)
-        put("MaxStreamingBitrate", MAX_STREAMING_BITRATE)
-        put("MaxStaticBitrate", MAX_STREAMING_BITRATE)
+        val maxStreamingBitrate =
+            capabilities.videoDecoders.maxOfOrNull(VideoDecoderCapability::maxBitrate)
+                ?: DEFAULT_MAX_STREAMING_BITRATE
+        put("MaxStreamingBitrate", maxStreamingBitrate)
+        put("MaxStaticBitrate", maxStreamingBitrate)
         putJsonArray("DirectPlayProfiles") {
             addJsonObject {
                 put("Type", "Video")
@@ -46,17 +46,30 @@ fun tvDeviceProfile(capabilities: TvMediaCapabilities): JsonObject =
             }
         }
         putJsonArray("CodecProfiles") {
-            capabilities.videoCodecs.sorted().forEach { codec ->
+            capabilities.videoDecoders.sortedBy(VideoDecoderCapability::codec).forEach { decoder ->
                 addJsonObject {
                     put("Type", "Video")
-                    put("Codec", codec)
+                    put("Codec", decoder.codec)
                     putJsonArray("Conditions") {
                         addJsonObject {
                             put("Condition", "EqualsAny")
                             put("Property", "VideoRangeType")
-                            put("Value", videoRangeTypes(codec, capabilities).joinToString("|"))
+                            put("Value", videoRangeTypes(decoder.codec, capabilities).joinToString("|"))
                             put("IsRequired", false)
                         }
+                        limitCondition("Width", decoder.maxWidth)
+                        limitCondition("Height", decoder.maxHeight)
+                        limitCondition("VideoFramerate", decoder.maxFrameRate)
+                        limitCondition("VideoBitrate", decoder.maxBitrate)
+                    }
+                }
+            }
+            directAudioCodecs(capabilities).forEach { codec ->
+                addJsonObject {
+                    put("Type", "Audio")
+                    put("Codec", codec)
+                    putJsonArray("Conditions") {
+                        limitCondition("AudioChannels", capabilities.maxAudioChannels)
                     }
                 }
             }
@@ -74,28 +87,35 @@ private fun videoRangeTypes(
     if (codec !in HDR_CAPABLE_CODECS) return listOf("SDR")
     return buildList {
         add("SDR")
-        add("DOVIWithSDR")
-        if (capabilities.displayHdr10) {
-            add("HDR10")
-            add("HDR10Plus")
-            if (!capabilities.displayDolbyVision) {
-                addAll(listOf("DOVIWithHDR10", "DOVIWithHDR10Plus", "DOVIWithEL", "DOVIWithELHDR10Plus"))
-            }
-        }
-        if (capabilities.displayHlg) {
-            add("HLG")
-            if (!capabilities.displayDolbyVision) add("DOVIWithHLG")
-        }
+        if (capabilities.displayHdr10) add("HDR10")
+        if (capabilities.displayHdr10Plus) add("HDR10Plus")
+        if (capabilities.displayHlg) add("HLG")
         if (capabilities.displayDolbyVision) {
-            if (DOLBY_VISION_PROFILE_FIVE in capabilities.dolbyVisionProfiles) add("DOVI")
-            if (DOLBY_VISION_PROFILE_EIGHT in capabilities.dolbyVisionProfiles) {
-                addAll(listOf("DOVIWithHDR10", "DOVIWithHLG", "DOVIWithHDR10Plus"))
+            add("DOVIWithSDR")
+            if (DOLBY_VISION_PROFILE_5 in capabilities.dolbyVisionProfiles) add("DOVI")
+            if (DOLBY_VISION_PROFILE_8 in capabilities.dolbyVisionProfiles) {
+                if (capabilities.displayHdr10) add("DOVIWithHDR10")
+                if (capabilities.displayHlg) add("DOVIWithHLG")
+                if (capabilities.displayHdr10Plus) add("DOVIWithHDR10Plus")
             }
-            if (DOLBY_VISION_PROFILE_SEVEN in capabilities.dolbyVisionProfiles) {
-                addAll(listOf("DOVIWithEL", "DOVIWithELHDR10Plus"))
+            if (DOLBY_VISION_PROFILE_7 in capabilities.dolbyVisionProfiles) {
+                add("DOVIWithEL")
+                if (capabilities.displayHdr10Plus) add("DOVIWithELHDR10Plus")
             }
         }
     }.distinct()
+}
+
+private fun kotlinx.serialization.json.JsonArrayBuilder.limitCondition(
+    property: String,
+    value: Int,
+) {
+    addJsonObject {
+        put("Condition", "LessThanEqual")
+        put("Property", property)
+        put("Value", value.toString())
+        put("IsRequired", true)
+    }
 }
 
 private fun subtitleProfiles() =

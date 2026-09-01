@@ -28,6 +28,12 @@ data class MediaStreamDto(
     val isForced: Boolean,
     val isHearingImpaired: Boolean,
     val isExternal: Boolean?,
+    val codec: String? = null,
+    val profile: String? = null,
+    val level: Int? = null,
+    val bitrate: Int? = null,
+    val videoRangeType: String? = null,
+    val audioSpatialFormat: String? = null,
 )
 
 data class MediaSourceDto(
@@ -39,6 +45,8 @@ data class MediaSourceDto(
     val transcodingUrl: String?,
     val transcodingSubProtocol: String?,
     val mediaStreams: List<MediaStreamDto>,
+    val isRemote: Boolean? = null,
+    val container: String? = null,
 )
 
 data class PlaybackInfoResult(
@@ -98,6 +106,7 @@ data class ResolveRequest(
     val rejectedSourceIds: Set<String>,
     val preferredMediaSourceId: String?,
     val trackOverride: TrackOverride?,
+    val policy: PlaybackRequestPolicy = androidTvPlaybackPolicy(),
 )
 
 data class ReleaseRequest(
@@ -112,6 +121,7 @@ data class ReleaseRequest(
     val pipelineDecision: String,
     val audioStreamIndex: Int,
     val subtitleStreamIndex: Int,
+    val policy: PlaybackRequestPolicy = androidTvPlaybackPolicy(),
 )
 
 data class SessionContext(

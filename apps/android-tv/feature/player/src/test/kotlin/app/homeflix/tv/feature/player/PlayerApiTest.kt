@@ -19,10 +19,13 @@ private const val PLAYBACK_INFO_RESPONSE = """
   "MediaSources": [{
     "Id": "source-1",
     "Name": "Remux",
+    "Container": "mkv",
+    "IsRemote": false,
     "SupportsDirectPlay": true,
     "SupportsTranscoding": true,
     "MediaStreams": [
-      {"Index": 1, "Type": "Audio", "Language": "eng", "Channels": 6},
+      {"Index": 1, "Type": "Audio", "Language": "eng", "Channels": 6,
+       "Codec": "eac3", "Profile": "Dolby Digital Plus", "BitRate": 1024000, "AudioSpatialFormat": "None"},
       {"Index": 3, "Type": "Subtitle", "Language": "eng", "IsExternal": true}
     ]
   }],
@@ -65,6 +68,7 @@ class PlayerApiTest {
             val body = Json.parseToJsonElement(client.lastBody.orEmpty()).jsonObject
             assertEquals("user-1", body.getValue("UserId").jsonPrimitive.content)
             assertEquals("true", body.getValue("PlaybackPipelineResolve").jsonPrimitive.content)
+            assertEquals("false", body.getValue("EnableDirectStream").jsonPrimitive.content)
             assertEquals("native-abc", body.getValue("PlaybackPipelineId").jsonPrimitive.content)
             assertEquals("native-abc-a1", body.getValue("PlaybackAttemptId").jsonPrimitive.content)
             assertEquals(
@@ -90,11 +94,15 @@ class PlayerApiTest {
             assertEquals("handle-1", result.pipelineHandle)
             assertEquals(3, result.pipelineSourceCount)
             assertEquals(-1, result.pipelineSubtitleStreamIndex)
+            val mediaSource = result.mediaSources.single()
+            val firstStream = mediaSource.mediaStreams.first()
+            assertEquals("mkv", mediaSource.container)
+            assertEquals(false, mediaSource.isRemote)
+            assertEquals("eac3", firstStream.codec)
+            assertEquals(1_024_000, firstStream.bitrate)
             assertEquals(
                 2,
-                result.mediaSources
-                    .single()
-                    .mediaStreams.size,
+                mediaSource.mediaStreams.size,
             )
         }
 

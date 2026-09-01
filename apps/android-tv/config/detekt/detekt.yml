@@ -11,3 +11,14 @@ naming:
 style:
   MagicNumber:
     ignorePropertyDeclaration: true
+  WildcardImport:
+    excludeImports:
+      - androidx.compose.foundation.layout.*
+      - androidx.compose.runtime.*
+      - androidx.compose.ui.*
+      - androidx.compose.ui.draw.*
+      - androidx.compose.ui.focus.*
+      - androidx.compose.ui.graphics.*
+      - androidx.compose.ui.unit.*
+      - androidx.tv.material3.*
+      - org.junit.jupiter.api.Assertions.*
